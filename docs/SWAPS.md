@@ -43,7 +43,7 @@ Two source details affect recovery and retries:
 
 ### Explicit protocol and amount encoding
 
-Request `options.intentProtocol: "v1_5"`; check `GetSupportedIntentProtocols` at readiness and fail closed if it is unavailable. Do not silently follow a changed default or downgrade to v1. Retain the protocol and returned contract context with each operation. [Protocol selection][api-protocol]
+Request `options.intentProtocol: "v1.5"`; check `GetSupportedIntentProtocols` at readiness and fail closed if it is unavailable. Do not silently follow a changed default or downgrade to v1. Retain the protocol and returned contract context with each operation. [Protocol selection][api-protocol]
 
 Use decimal strings for all base-unit amounts over our HTTP API, storage and Trails JSON. Use `bigint` for arithmetic. The generated Trails client serializes bigint values to decimal strings; OpenAPI's numeric annotations are insufficient guidance for JavaScript amounts. Reject unsafe numeric amounts returned by upstream rather than rounding them. Fee USD estimates can be decimal display values and must never determine the amount sent. [Wire codec][sdk-generated], [request and deposit types][api-types]
 
@@ -57,7 +57,7 @@ The builder uses ERC-1271 for an owner with deployed contract code. An owner wit
 
 ## 3. Standalone SDK boundaries
 
-Add a `./trails` export to `@oms/server-wallet-sdk` containing:
+Add a `./trails` export to `@polygonlabs/oms-server-wallet-sdk` containing:
 
 - `TrailsClient`: a small Fetch-based client with runtime response validation, bounded body size, deadlines, structured errors and separate access-key handling. Use direct RPC calls; do not import Trails React hooks or the embedded OMS SDK.
 - `WalletSwaps`: quote validation, funding construction, operation state transitions, upstream reconciliation, and recovery validation. Supply wallet/store/clock/transport dependencies through interfaces.
@@ -116,7 +116,7 @@ Example quote body (addresses shown only to illustrate the contract; registry me
   "mode": "SWAP",
   "onlyNativeGasFee": true,
   "options": {
-    "intentProtocol": "v1_5",
+    "intentProtocol": "v1.5",
     "slippageTolerance": 0.005
   }
 }
@@ -238,6 +238,20 @@ Run existing `pnpm check`, coverage, Workers tests, Worker bundle validation and
 Live acceptance uses separately configured Trails credentials and an agreed small funded wallet/budget. Record actual service versions and redact credentials. Verify discovery/quotes and OMS funding sponsorship across all five chains; execute a representative same-chain native-to-token swap, cross-chain stablecoin swap, and same-asset bridge (including Polygon/Base and an additional chain where funded). Test a missing native-gas balance with ERC-20 input. Exercise source recovery and destination recovery with an initially undeployed owner through a controlled scenario. Do not manufacture failures with arbitrary mainnet calls. If a recovery scenario needs upstream test tooling, record that dependency and keep release acceptance incomplete until demonstrated.
 
 ## 11. Implementation PRs and completion
+
+Implementation resumed on 2026-09-17 after the standalone SDK was published as `@polygonlabs/oms-server-wallet-sdk`. The first implementation branch adds the optional `/trails` API client, quote/recovery validators and attested typed-data signing. It does not enable dashboard swaps or submit funding/recovery transactions.
+
+Live compatibility findings for PR 1:
+
+- The API advertises `v1.5` on the wire. The RIDL enum member is named `v1_5`; requests must use its serialized `v1.5` value.
+- `GetProtocolContracts` returns capitalized `TrailsContracts`. For v1.5, the three legacy entrypoint/router fields are empty; `trailsUtilsAddress` is populated.
+- Quotes can return `passthrough: null`, an empty `destinationApproveAddress`, and omit the `onlyNativeGasFee` hint from the stored request. These shapes are accepted without weakening owner, transfer, amount, slippage or destination-call checks.
+- The pinned TS payload encoder emits a byte for a zero nonce and an explicit empty calldata length. The Go recovery encoder omits both. Regression vectors independently assemble Go bytes; validation accepts the Go and pinned TS representations and rejects trailing data.
+- Readiness and quote checks do not satisfy the funded execution/recovery release gates below. In particular, WaaS verification of EIP-6492 signatures does not prove that Trails accepts them for recovery.
+
+PR 1 live checks on 2026-09-17 passed discovery for all five chains (405 listed tokens), a 10 USDC Polygon → Base quote, and a 100 POL → USDC Polygon quote. Dev WaaS signed and verified inert typed-data probes on Polygon and Base; both used EIP-6492 wrappers. Test credentials were revoked afterward. No intent was activated or funded, and no recovery authorization was signed.
+
+`GetExactInputRoutes` returned an empty destination list for Polygon native USDC with the configured key, although `QuoteIntent` accepted that source for the Base route. Resolve that discovery discrepancy before implementing dashboard route filtering; do not treat the empty list as proof that the quote route is unsupported.
 
 1. **SDK contract and compatibility:** typed Trails transport, v1.5 discovery/quote validation, lossless codec, recovery codec and WaaS typed-signing primitives. Establish source fixtures and verify deployment/signature compatibility with the configured services before enabling execution.
 2. **Persistent execution:** state machine, sponsored funding, idempotency/outbox, debit coordination, alarm/Node runners, migrations, status/history routes and crash/retry tests.

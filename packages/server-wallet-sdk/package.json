@@ -36,6 +36,10 @@
     "LICENSE-APACHE-2.0"
   ],
   "exports": {
+    "./trails": {
+      "types": "./dist/trails/index.d.ts",
+      "import": "./dist/trails/index.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
@@ -47,6 +51,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
+    "@0xsequence/wallet-primitives": "3.0.11",
     "@peculiar/x509": "2.0.0",
     "cbor-x": "1.6.6",
     "reflect-metadata": "0.2.2",

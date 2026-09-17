@@ -147,6 +147,8 @@ aside {
   margin: 4px 12px 12px;
 }
 .nav-item {
+  display: block;
+  text-decoration: none;
   width: 100%;
   text-align: left;
   border: 0;
@@ -225,6 +227,16 @@ header {
 .primary:hover:not(:disabled) {
   background: #c7acf9;
 }
+.create-wallet-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.button-icon {
+  display: block;
+  flex: 0 0 18px;
+}
 .secondary {
   background: #23212b;
   color: #d2cfdf;
@@ -243,6 +255,8 @@ header {
   padding: 5px 0;
 }
 .back {
+  display: inline-block;
+  text-decoration: none;
   margin-top: 26px;
 }
 .address {
@@ -333,10 +347,6 @@ header {
 .filters input {
   max-width: 360px;
 }
-.filters select {
-  width: 175px;
-  margin-left: auto;
-}
 input,
 select,
 textarea {
@@ -408,7 +418,46 @@ td.mono {
   color: #9c94aa;
   font-size: 11px;
 }
+.wallet-row {
+  cursor: pointer;
+}
+.wallet-row:hover td,
+.wallet-row:focus-within td {
+  background: #26212f;
+}
+.wallet-row:focus-within {
+  outline: 2px solid #af8aef;
+  outline-offset: -2px;
+}
+.wallet-value strong {
+  font-variant-numeric: tabular-nums;
+}
+.wallet-value small {
+  display: block;
+  max-width: 230px;
+  white-space: normal;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.portfolio-value {
+  padding: 4px 0 24px;
+}
+.portfolio-value > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.portfolio-value .wallet-value strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.8px;
+}
+.portfolio-value .wallet-value small {
+  max-width: none;
+}
 .wallet-link {
+  text-decoration: none;
   border: 0;
   background: none;
   display: flex;
@@ -789,9 +838,6 @@ dialog .notice {
   }
   .filters {
     padding: 0 16px 18px;
-  }
-  .filters select {
-    width: 130px;
   }
   .panel-toolbar {
     padding: 20px 16px;

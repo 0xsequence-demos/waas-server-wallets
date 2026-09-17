@@ -12,7 +12,7 @@ The application deploys as one Worker with static assets, D1, and one SQLite Dur
 - `APP_ORIGIN` is `https://oms-server-wallet-dashboard.0xsequence.workers.dev`. Both WaaS and indexer gateway requests send this exact `Origin` header, without a trailing slash. Local development retains its localhost origin.
 - OIDC audience: `api.dev.polygon-dev.technology`; provider registration verified by live authentication.
 - Approved dev PCR0: 96 hexadecimal zeros. Full Nitro certificate, signature, freshness, nonce, and request/response binding verification remains enabled. Production routing rejects the debug measurement.
-- Deployment version: `62b4bc1a-c5ed-4de7-8ebd-385d2f5de305`.
+- Deployment version: `f75b331c-7d27-4532-9aab-d688140fb7fb`.
 
 Verified over public HTTPS on 2026-09-16: static assets, discovery/JWKS, JWT verification against the published key, admin login/logout, secure session cookies, CSRF rejection, D1 catalog reads, and the wallet setup guard. These checks made no WaaS calls or wallet transactions.
 

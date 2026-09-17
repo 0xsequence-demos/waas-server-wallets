@@ -20,7 +20,7 @@ try {
   await page.getByRole('button', { name: 'Open dashboard' }).click();
   await expect(page.getByRole('heading', { name: 'Your wallet workspace' })).toBeVisible();
   await page
-    .getByRole('button', { name: new RegExp(`Live acceptance wallet.*${identifier}`) })
+    .getByRole('link', { name: new RegExp(`Live acceptance wallet.*${identifier}`) })
     .click();
   await expect(
     page.getByRole('heading', { name: 'Live acceptance wallet', exact: true }),

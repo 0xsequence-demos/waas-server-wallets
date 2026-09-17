@@ -11,7 +11,7 @@ importers:
       '@hono/node-server':
         specifier: 2.1.1
         version: 2.1.1(hono@4.13.5)
-      '@oms/server-wallet-sdk':
+      '@polygonlabs/oms-server-wallet-sdk':
         specifier: workspace:*
         version: link:packages/server-wallet-sdk
       hono:

@@ -1,6 +1,14 @@
-# @oms/server-wallet-sdk
+# @polygonlabs/oms-server-wallet-sdk
 
-Internal standalone ESM TypeScript SDK targeting WaaS v1.1.0. Currently private; it can be extracted without the dashboard, Hono, D1, or the embedded wallet SDK. Build with `pnpm --filter @oms/server-wallet-sdk build`. Requires Web Crypto and Fetch (Node 24+ or Workers with `nodejs_compat`).
+Standalone ESM TypeScript SDK targeting WaaS v1.1.0, with OIDC authentication, encrypted credential persistence, attested responses, verified message signing, and sponsored native/ERC-20 transfers. Requires Web Crypto and Fetch (Node 24+ or Workers with `nodejs_compat`). It has no dashboard, Hono, D1, or embedded wallet SDK dependency.
+
+## Installation
+
+```sh
+npm install @polygonlabs/oms-server-wallet-sdk@0.1.0
+```
+
+For a step-by-step guide to integrating this package into your own Node.js / TypeScript backend, see the [OIDC, wallet creation, signing, and transaction walkthrough](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/NODE-INTEGRATION.md).
 
 ## Integration
 
@@ -12,14 +20,16 @@ import {
   SerialExecutor,
   IndexerClient,
   parseAmount,
+  environmentFromKey,
   type StateStore,
-} from '@oms/server-wallet-sdk';
+} from '@polygonlabs/oms-server-wallet-sdk';
 
 // Implement durable reads/writes in a namespace dedicated to this identity.
 declare const persistence: StateStore;
 declare const publishableKey: string;
 declare const approvedPcr0s: string[];
 declare const encryptionKeyBase64: string; // 32 random bytes, base64 encoded
+declare const applicationOrigin: string; // Origin allowed for the OMS publishable key
 declare const issuer: string;
 declare const audience: string;
 declare const subject: string;
@@ -27,18 +37,36 @@ declare function issueIdToken(): Promise<{ token: string; expiresAt: number }>;
 
 // Reuse exactly one executor per identity in a single process/DO instance.
 const executor = new SerialExecutor();
+const environment = environmentFromKey(publishableKey);
+const namespace = JSON.stringify([
+  environment.origin,
+  environment.projectId,
+  issuer,
+  audience,
+  subject,
+]);
+// Server requests use the project's allowed Origin, just like the walkthrough.
+const omsFetch: typeof fetch = (input, init) => {
+  const headers = new Headers(
+    init?.headers ?? (input instanceof Request ? input.headers : undefined),
+  );
+  headers.set('Origin', new URL(applicationOrigin).origin);
+  return fetch(input, { ...init, headers });
+};
 const wallet = new ServerWallet({
   subject,
   issuer,
   audience,
   tokenProvider: issueIdToken,
-  transport: new WaasTransport(publishableKey, approvedPcr0s),
-  store: new EncryptedStore(persistence, encryptionKeyBase64, `project:${issuer}:${subject}`),
+  transport: new WaasTransport(publishableKey, approvedPcr0s, omsFetch),
+  store: new EncryptedStore(persistence, encryptionKeyBase64, namespace),
   executor,
 });
 
 const snapshot = await wallet.createOrRestore();
-const balances = await new IndexerClient(publishableKey).getBalances(snapshot.wallet!.address);
+const balances = await new IndexerClient(publishableKey, omsFetch).getBalances(
+  snapshot.wallet!.address,
+);
 const signed = await wallet.signMessage(crypto.randomUUID(), 137, 'Hello OMS');
 
 const operationId = crypto.randomUUID(); // persist and reuse on retries
@@ -86,4 +114,6 @@ Idempotency IDs must contain 8–100 letters, digits, underscores, or hyphens. C
 
 `IndexerClient.getBalances(address, page?)` returns base-unit strings, metadata, a fetch timestamp, per-chain errors, and `nextPage`. Keep errors separate from zero balances and follow pagination. Unknown token decimals stay unknown.
 
-See [NOTICE](NOTICE) for the Apache-licensed verifier provenance. Neither the package nor its API is published or declared stable yet.
+Version `0.1.0` is the initial release; the API is not yet declared stable. Pin the version and review changes before upgrading. Licensed under [Apache-2.0](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/packages/server-wallet-sdk/LICENSE-APACHE-2.0); see [NOTICE](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/packages/server-wallet-sdk/NOTICE) for verifier provenance. Both files are included in the npm package.
+
+For local SDK development in the repository, run `pnpm --filter @polygonlabs/oms-server-wallet-sdk build`. Packaging runs the build automatically through `prepack`.

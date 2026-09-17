@@ -1,4 +1,4 @@
-import type { Balances } from '@oms/server-wallet-sdk';
+import type { Balances } from '@polygonlabs/oms-server-wallet-sdk';
 import { api } from './api';
 
 /** Follow gateway pagination so the portfolio value includes every indexed asset. */

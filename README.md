@@ -34,7 +34,13 @@ Live wallet actions require an OMS publishable key, trusted enclave measurements
 
 On Cloudflare, one Worker serves assets, API, discovery, and JWKS. D1 stores the catalog, sessions, audit events, and operation summaries. A SQLite Durable Object per wallet owns encrypted credentials, nonces, and authoritative operation state and serializes calls. Node uses the same SDK and API with SQLite and per-wallet in-process executors. Do not run multiple Node processes against the same local database.
 
-For your own backend, follow the [Node.js / TypeScript integration walkthrough](docs/NODE-INTEGRATION.md), covering OIDC registration, credentials, wallet creation, signing, and transaction sending. See also the [detailed specification](docs/SPEC.md) and [SDK API and integration contract](packages/server-wallet-sdk/README.md).
+For your own backend, install the standalone SDK from npm:
+
+```sh
+npm install @polygonlabs/oms-server-wallet-sdk@0.1.0
+```
+
+Follow the [Node.js / TypeScript integration walkthrough](docs/NODE-INTEGRATION.md), covering OIDC registration, credentials, wallet creation, signing, and transaction sending. The dashboard uses the same package through a workspace dependency for local development. See also the [detailed specification](docs/SPEC.md), [SDK API and integration contract](packages/server-wallet-sdk/README.md), and [SDK release procedure](docs/SDK-RELEASE.md).
 
 ## Verification
 

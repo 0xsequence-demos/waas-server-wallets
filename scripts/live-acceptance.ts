@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import type { Balances, Operation, WalletSnapshot } from '@oms/server-wallet-sdk';
+import type { Balances, Operation, WalletSnapshot } from '@polygonlabs/oms-server-wallet-sdk';
 
 // Explicit opt-in command. Uses a dedicated identity and the deployed application's API.
 const origin = 'https://oms-server-wallet-dashboard.0xsequence.workers.dev';

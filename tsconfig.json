@@ -16,7 +16,7 @@
       "@cloudflare/vitest-plugin/types",
       "vite/client"
     ],
-    "paths": { "@oms/server-wallet-sdk": ["./packages/server-wallet-sdk/src/index.ts"] }
+    "paths": { "@polygonlabs/oms-server-wallet-sdk": ["./packages/server-wallet-sdk/src/index.ts"] }
   },
   "include": ["apps", "packages/*/src", "scripts", "tests", "*.ts", "worker-configuration.d.ts"]
 }

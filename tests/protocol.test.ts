@@ -5,7 +5,7 @@ import {
   signatureHeader,
 } from '../packages/server-wallet-sdk/src/protocol.js';
 import { WaasTransport, boundedText } from '../packages/server-wallet-sdk/src/transport.js';
-import { IndexerClient } from '@oms/server-wallet-sdk';
+import { IndexerClient } from '@polygonlabs/oms-server-wallet-sdk';
 import { formatAmount, toUnits } from '../apps/dashboard/src/amount.js';
 import { omsFetch } from '../apps/server/oms-fetch.js';
 

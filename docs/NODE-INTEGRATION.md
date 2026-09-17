@@ -1,6 +1,6 @@
 # Node.js / TypeScript wallet integration walkthrough
 
-This guide shows how to use this repository's `@oms/server-wallet-sdk` in your own backend: configure OpenID Connect (OIDC), create or restore a wallet, sign a message, and send a sponsored native-token or ERC-20 transfer. It targets the implementation in this repo and its WaaS v1.1.0 protocol. You can use it without the dashboard or Cloudflare.
+This guide shows how to use `@polygonlabs/oms-server-wallet-sdk` from npm in your own backend: configure OpenID Connect (OIDC), create or restore a wallet, sign a message, and send a sponsored native-token or ERC-20 transfer. It targets SDK `0.1.0` and its WaaS v1.1.0 protocol. You can use it without cloning this repository, running the dashboard, or using Cloudflare.
 
 **Your backend supplies a trusted identity; the SDK authenticates a credential for that identity; WaaS performs wallet signing.** You provide OpenID information in two places: register your issuer and audience with OMS once, then provide a fresh signed ID token through the SDK's `tokenProvider` whenever authentication is needed.
 
@@ -67,24 +67,20 @@ If you already have an identity provider, confirm its issuer, audience, token-si
 
 ## 3. Install the standalone SDK
 
-Use Node **24+**. The SDK is currently a private workspace package, version `0.1.0`; it is not a published, stable npm API. Package this checked-out implementation first.
-
-From this repository:
+Use Node **24+** and install the SDK directly from npm in your backend:
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm --filter @oms/server-wallet-sdk build
-pnpm --filter @oms/server-wallet-sdk pack --pack-destination /tmp/oms-sdk-package
+npm install @polygonlabs/oms-server-wallet-sdk@0.1.0
 ```
 
-Copy the resulting `oms-server-wallet-sdk-0.1.0.tgz` to the machine running your backend if needed. For a new example application, run outside this repository:
+Version `0.1.0` is the initial release; its API is not yet declared stable. The examples pin this version. For a new example application, run the following commands in a directory of your choice:
 
 ```sh
 mkdir oms-node-example
 cd oms-node-example
 npm init -y
 npm pkg set type=module
-npm install /tmp/oms-sdk-package/oms-server-wallet-sdk-0.1.0.tgz jose@6.2.10
+npm install @polygonlabs/oms-server-wallet-sdk@0.1.0 jose@6.2.10
 npm install --save-dev typescript@5.9.3 tsx@4.23.13 @types/node@24
 mkdir src
 ```
@@ -268,7 +264,7 @@ import {
   WaasTransport,
   environmentFromKey,
   type StateStore,
-} from '@oms/server-wallet-sdk';
+} from '@polygonlabs/oms-server-wallet-sdk';
 import { audience, issuer, issueIdToken, required } from './oidc.js';
 
 const filename = resolve(process.env.DATABASE_PATH ?? '.data/wallets.sqlite');
@@ -408,7 +404,7 @@ An expired five-minute ID token does not itself end the longer-lived credential.
 Create `src/demo.ts`. The sample uses one fixed subject and sends a small Polygon native-token transfer **back to the same wallet**. For a real transfer, choose and authorize the recipient, chain, asset, and amount in your application before preparing it.
 
 ```ts
-import { parseAmount, WalletError } from '@oms/server-wallet-sdk';
+import { parseAmount, WalletError } from '@polygonlabs/oms-server-wallet-sdk';
 import { getWallet } from './wallets.js';
 
 // In an API, look this up from the authenticated and authorized account.
@@ -515,7 +511,7 @@ Review the returned `transfer.chainId`, `transfer.to`, `transfer.asset`, and `tr
 For ERC-20, replace the preparation input with an approved token's contract address **on that chain**, and use its verified decimals. For example, inside an application function whose token metadata and recipient have already been validated:
 
 ```ts
-import { parseAmount, type ServerWallet } from '@oms/server-wallet-sdk';
+import { parseAmount, type ServerWallet } from '@polygonlabs/oms-server-wallet-sdk';
 
 async function prepareTokenTransfer(
   wallet: ServerWallet,

@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { serve } from '@hono/node-server';
-import { SerialExecutor } from '@oms/server-wallet-sdk';
+import { SerialExecutor } from '@polygonlabs/oms-server-wallet-sdk';
 import { createApp } from './app.js';
 import { configFrom, scopeFor } from './config.js';
 import { Repository, SqlStateStore, type SqlDatabase } from './database.js';

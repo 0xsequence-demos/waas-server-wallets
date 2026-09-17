@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import type { Operation } from '@oms/server-wallet-sdk';
+import type { Operation } from '@polygonlabs/oms-server-wallet-sdk';
 
 test('admin creates a wallet, reviews a sponsored transfer, and signs a message', async ({
   page,

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { Balance, Balances, Operation, WalletSnapshot } from '@oms/server-wallet-sdk';
+import type { Balance, Balances, Operation, WalletSnapshot } from '@polygonlabs/oms-server-wallet-sdk';
 import { api } from './api';
 import { formatAmount, toUnits } from './amount';
 import { balanceValue, formatUsd, walletBalances } from './balances';

@@ -1,5 +1,5 @@
 import { SignJWT, importJWK, exportJWK, calculateJwkThumbprint, type JWK } from 'jose';
-import { WalletError } from '@oms/server-wallet-sdk';
+import { WalletError } from '@polygonlabs/oms-server-wallet-sdk';
 import type { Config } from './config.js';
 
 export class OidcIssuer {

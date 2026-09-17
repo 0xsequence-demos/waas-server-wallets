@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { SerialExecutor, WaasTransport } from '@oms/server-wallet-sdk';
+import { SerialExecutor, WaasTransport } from '@polygonlabs/oms-server-wallet-sdk';
 import { generateKeyPair, exportJWK, importJWK, jwtVerify, decodeProtectedHeader } from 'jose';
 import { createApp } from '../apps/server/app.js';
 import { configFrom, scopeFor } from '../apps/server/config.js';

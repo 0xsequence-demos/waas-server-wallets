@@ -1,8 +1,35 @@
 {
-  "name": "@oms/server-wallet-sdk",
+  "name": "@polygonlabs/oms-server-wallet-sdk",
   "version": "0.1.0",
-  "private": true,
+  "description": "Standalone TypeScript SDK for OMS server wallets, OIDC authentication, attested signing, and sponsored transfers.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xsequence-demos/waas-server-wallets.git",
+    "directory": "packages/server-wallet-sdk"
+  },
+  "homepage": "https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/NODE-INTEGRATION.md",
+  "bugs": {
+    "url": "https://github.com/0xsequence-demos/waas-server-wallets/issues"
+  },
+  "keywords": [
+    "polygon",
+    "oms",
+    "wallet",
+    "waas",
+    "oidc",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "NOTICE",
@@ -16,7 +43,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@peculiar/x509": "2.0.0",

@@ -3,7 +3,7 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { z } from 'zod';
-import { CHAINS, IndexerClient, WalletError, type WalletSnapshot } from '@oms/server-wallet-sdk';
+import { CHAINS, IndexerClient, WalletError, type WalletSnapshot } from '@polygonlabs/oms-server-wallet-sdk';
 import { readiness, type Config } from './config.js';
 import { Repository, type WalletRow } from './database.js';
 import { AdminAuth } from './auth.js';

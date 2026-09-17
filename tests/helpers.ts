@@ -6,7 +6,7 @@ import {
   UpstreamError,
   type StateStore,
   type RpcTransport,
-} from '@oms/server-wallet-sdk';
+} from '@polygonlabs/oms-server-wallet-sdk';
 import type { Credential } from '../packages/server-wallet-sdk/src/protocol.js';
 import type { SqlDatabase } from '../apps/server/database.js';
 

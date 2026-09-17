@@ -1,4 +1,4 @@
-import type { WalletSnapshot, Operation, StateStore } from '@oms/server-wallet-sdk';
+import type { WalletSnapshot, Operation, StateStore } from '@polygonlabs/oms-server-wallet-sdk';
 
 export interface SqlDatabase {
   all<T extends Record<string, unknown>>(

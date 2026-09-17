@@ -5,7 +5,7 @@ import {
   ServerWallet,
   parseAmount,
   environmentFromKey,
-} from '@oms/server-wallet-sdk';
+} from '@polygonlabs/oms-server-wallet-sdk';
 import { MemoryStore, sdkHarness } from './helpers.js';
 
 const transfer = {

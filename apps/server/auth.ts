@@ -1,4 +1,4 @@
-import { sha256, WalletError } from '@oms/server-wallet-sdk';
+import { sha256, WalletError } from '@polygonlabs/oms-server-wallet-sdk';
 import type { Config } from './config.js';
 import type { SqlDatabase } from './database.js';
 

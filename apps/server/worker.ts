@@ -1,5 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
-import { SerialExecutor, sha256, type StateStore } from '@oms/server-wallet-sdk';
+import { SerialExecutor, sha256, type StateStore } from '@polygonlabs/oms-server-wallet-sdk';
 import { createApp } from './app.js';
 import { configFrom, scopeFor, type Config } from './config.js';
 import { Repository, type SqlDatabase } from './database.js';

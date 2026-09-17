@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Balance, Balances } from '@oms/server-wallet-sdk';
+import type { Balance, Balances } from '@polygonlabs/oms-server-wallet-sdk';
 import { balanceValue, formatUsd, walletBalances } from '../apps/dashboard/src/balances';
 
 const asset = (balanceUSD?: string, balance = '1'): Balance => ({

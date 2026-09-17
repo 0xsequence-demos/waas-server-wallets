@@ -6,7 +6,7 @@ import {
   ServerWallet,
   WaasTransport,
   type StateStore,
-} from '@oms/server-wallet-sdk';
+} from '@polygonlabs/oms-server-wallet-sdk';
 import type { Credential } from '../packages/server-wallet-sdk/src/protocol.js';
 import { configFrom, scopeFor } from '../apps/server/config.js';
 import { OidcIssuer } from '../apps/server/issuer.js';

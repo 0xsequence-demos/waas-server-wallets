@@ -1,4 +1,4 @@
-import { environmentFromKey } from '@oms/server-wallet-sdk';
+import { environmentFromKey } from '@polygonlabs/oms-server-wallet-sdk';
 export interface Config {
   ADMIN_PASSWORD: string;
   SESSION_SECRET: string;

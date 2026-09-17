@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '@oms/server-wallet-sdk': new URL(
+      '@polygonlabs/oms-server-wallet-sdk': new URL(
         './packages/server-wallet-sdk/src/index.ts',
         import.meta.url,
       ).pathname,

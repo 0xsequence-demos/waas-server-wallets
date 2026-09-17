@@ -8,7 +8,7 @@ import {
   type Operation,
   type Transfer,
   type WalletSnapshot,
-} from '@oms/server-wallet-sdk';
+} from '@polygonlabs/oms-server-wallet-sdk';
 import { readiness, scopeFor, type Config } from './config.js';
 import { OidcIssuer } from './issuer.js';
 import { omsFetch } from './oms-fetch.js';

@@ -7,13 +7,13 @@ Status: implemented prototype targeting WaaS v1.1.0, with scope confirmed on 202
 - Demonstrate a custodial dashboard built on OMS wallet infrastructure using a server wallet integration.
 - A backend-controlled OIDC identity authenticates to WaaS through an approved issuer/JWKS configuration.
 - The backend chooses wallet identifiers and can operate the wallets it creates without end-user approval.
-- Include an OIDC auth server, wallet/session persistence, an internal TypeScript backend SDK, and a dashboard.
+- Include an OIDC auth server, wallet/session persistence, a standalone TypeScript backend SDK, and a dashboard.
 - Keep request signing, authentication protocol details, cryptography, and attestation verification inside the SDK.
 - The dashboard creates wallets, lists wallets and balances, sends transactions, and signs messages.
 - Fetch balances through the OMS indexer gateway.
 - Use TypeScript, meaningful automated tests, and a standalone Cloudflare Workers deployment.
 - Provide a genuine Node-based local development server that does not require `wrangler dev`, Miniflare, or workerd on NixOS.
-- Structure the internal SDK so it can later be published for other Node backends.
+- Distribute the standalone SDK to other Node backends as `@polygonlabs/oms-server-wallet-sdk` on npm. The initial release is `0.1.0`; the dashboard consumes the same package through the workspace.
 
 The application operator controls the OIDC issuer and backend credentials and can therefore authorize wallet operations. Wallet signing keys remain within the WaaS architecture. Product copy must describe this division of control accurately.
 

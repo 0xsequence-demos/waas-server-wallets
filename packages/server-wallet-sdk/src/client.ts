@@ -17,6 +17,7 @@ import {
 } from './protocol.js';
 import type { ExclusiveExecutor, StateStore } from './storage.js';
 import type { RpcTransport } from './transport.js';
+import { validateTypedData } from './typed-data.js';
 
 export interface WalletSnapshot {
   wallet?: RemoteWallet;
@@ -39,7 +40,7 @@ export interface Transfer {
 }
 export interface Operation {
   id: string;
-  kind: 'transfer' | 'sign';
+  kind: 'transfer' | 'sign' | 'signTypedData';
   inputHash: string;
   createdAt: string;
   status:
@@ -529,6 +530,52 @@ export class ServerWallet {
           502,
         );
       op.signature = result.signature;
+      op.verified = true;
+      op.status = 'signed';
+      await this.writeOperation(op);
+      return op;
+    });
+  }
+  /** Backend EIP-712 primitive. Callers must validate the authorization's semantics first. */
+  async signTypedData(id: string, chainId: number, input: unknown): Promise<Operation> {
+    // Snapshot synchronously so callers cannot mutate an authorization while it is queued.
+    const { typedData, digest } = validateTypedData(input, chainId);
+    return this.options.executor.run(async () => {
+      const { operation, hash } = await this.existing(id, 'signTypedData', { chainId, digest });
+      if (operation) return operation;
+      const state = await this.load();
+      await this.ensure(state);
+      const op: Operation = {
+        id,
+        kind: 'signTypedData',
+        chainId,
+        inputHash: hash,
+        createdAt: new Date().toISOString(),
+        status: 'unknown',
+      };
+      await this.writeOperation(op);
+      const { signature } = signatureSchema.parse(
+        await this.activeCall(state, 'SignTypedData', {
+          network: String(chainId),
+          walletId: state.wallet!.id,
+          typedData,
+        }),
+      );
+      const { isValid } = validSchema.parse(
+        await this.options.transport.request('IsValidTypedDataSignature', {
+          network: String(chainId),
+          walletAddress: state.wallet!.address,
+          typedData,
+          signature,
+        }),
+      );
+      if (!isValid)
+        throw new WalletError(
+          'SIGNATURE_INVALID',
+          'WaaS returned a signature that did not verify.',
+          502,
+        );
+      op.signature = signature;
       op.verified = true;
       op.status = 'signed';
       await this.writeOperation(op);

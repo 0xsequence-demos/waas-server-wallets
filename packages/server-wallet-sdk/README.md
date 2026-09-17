@@ -95,16 +95,17 @@ Each RPC nonce is durably advanced before dispatch. All WaaS responses must pass
 
 ## Operations and recovery
 
-| Method                              | Behavior                                                            |
-| ----------------------------------- | ------------------------------------------------------------------- |
-| `inspect()`                         | Public snapshot; does not authenticate or return private material.  |
-| `createOrRestore()`                 | Recover one wallet for the configured identity; reauth when needed. |
-| `rotate()`                          | Self-revoke the current credential, then authenticate a fresh one.  |
-| `setDisabled(boolean)`              | Disable before revocation; block auth until explicitly re-enabled.  |
-| `signMessage(id, chainId, message)` | Sign plain text and verify with WaaS wallet-aware verification.     |
-| `prepareTransfer(id, transfer)`     | Validate a native/ERC-20 transfer; require sponsored quote.         |
-| `executeTransfer(id)`               | Submit the stored quote once; reconcile repeated calls.             |
-| `getOperation(id)`                  | Return persisted result; poll pending/uncertain transfer status.    |
+| Method                                  | Behavior                                                            |
+| --------------------------------------- | ------------------------------------------------------------------- |
+| `inspect()`                             | Public snapshot; does not authenticate or return private material.  |
+| `createOrRestore()`                     | Recover one wallet for the configured identity; reauth when needed. |
+| `rotate()`                              | Self-revoke the current credential, then authenticate a fresh one.  |
+| `setDisabled(boolean)`                  | Disable before revocation; block auth until explicitly re-enabled.  |
+| `signMessage(id, chainId, message)`     | Sign plain text and verify with WaaS wallet-aware verification.     |
+| `signTypedData(id, chainId, typedData)` | Validate EIP-712 domain/data, sign, and verify with WaaS.           |
+| `prepareTransfer(id, transfer)`         | Validate a native/ERC-20 transfer; require sponsored quote.         |
+| `executeTransfer(id)`                   | Submit the stored quote once; reconcile repeated calls.             |
+| `getOperation(id)`                      | Return persisted result; poll pending/uncertain transfer status.    |
 
 Idempotency IDs must contain 8–100 letters, digits, underscores, or hyphens. Changed input under the same ID raises `IDEMPOTENCY_CONFLICT`. Reusing an ID never prepares another transfer. A new quote after expiry requires a new ID and operator review.
 
@@ -113,6 +114,53 @@ Idempotency IDs must contain 8–100 letters, digits, underscores, or hyphens. C
 `WalletError` exposes a safe code, message, and HTTP-oriented status. `UpstreamError` also exposes the numeric WaaS error code and RPC method. Raw tokens, private keys, and upstream response bodies are excluded. Validation failures, unsigned gateway failures, and attestation failures must be surfaced instead of weakening verification.
 
 `IndexerClient.getBalances(address, page?)` returns base-unit strings, metadata, a fetch timestamp, per-chain errors, and `nextPage`. Keep errors separate from zero balances and follow pagination. Unknown token decimals stay unknown.
+
+## Trails foundation (unreleased)
+
+The optional `@polygonlabs/oms-server-wallet-sdk/trails` entry point provides direct API discovery, quotes and recovery authorization validation. This entry point and `signTypedData` are source additions after `0.1.0`; they are not included in the published `0.1.0` package. Build this workspace to try them.
+
+```ts
+import {
+  TrailsClient,
+  buildSwapRequest,
+  validateSwapQuote,
+} from '@polygonlabs/oms-server-wallet-sdk/trails';
+
+const trails = new TrailsClient({
+  apiKey: trailsApiKey, // Separate from the OMS publishable key; backend only.
+  origin: applicationOrigin, // Exact origin, without a trailing slash.
+});
+const { TrailsContracts } = await trails.readiness();
+const assets = [
+  { chainId: 137, asset: '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359', decimals: 6 },
+  { chainId: 8453, asset: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', decimals: 6 },
+]; // Host-approved asset policy, not input supplied by a dashboard request.
+const request = buildSwapRequest(
+  snapshot.wallet!.address,
+  {
+    originChainId: 137,
+    originAsset: assets[0].asset,
+    destinationChainId: 8453,
+    destinationAsset: assets[1].asset,
+    amount: '10000000', // Base units; never pass a floating-point token amount.
+  },
+  assets,
+);
+const { intent } = await trails.quoteIntent(request);
+const reviewed = await validateSwapQuote(intent, request, TrailsContracts);
+// Persist and review the snapshot/digest before any funding workflow.
+// This foundation does not activate, fund, retry or settle a swap.
+```
+
+`TrailsClient` supports `readiness`, `getChains`, `getTokenList`, `getExactInputRoutes`, `quoteIntent`, `getIntent` and `prepareIntentRecovery`. Calls are bounded, reject redirects and unsafe integer JSON, support caller cancellation, and never automatically retry. `TrailsError` contains the method, HTTP status and numeric upstream code without upstream bodies or keys. There is no `CommitIntent` call. Readiness requires the **wire value `v1.5`**; `v1_5` is only an upstream enum identifier.
+
+Quote validation binds the owner/recipient, chains, assets, budget, slippage, expiry, contracts and deposit precondition. It reconstructs native/ERC-20 funding calldata locally and returns an independent snapshot plus a base64url SHA-256 digest. Keep the snapshot and digest in authoritative storage; the digest is not an authentication token. The host must review any changed quote and require WaaS sponsorship when it eventually prepares the funding transfer.
+
+`validateRecoveryPayload(prepared, intent, owner, balances)` decodes Sequence v3 calls, binds the recorded intent address/chain, restricts native/ERC-20 transfers and TrailsUtils sweeps to the owner and reviewed assets, and checks the EIP-712 hash. Supply fresh, host-observed `{asset, amount}` balances **on that intent chain**, never balances supplied by a browser. The returned `typedData` can be passed to `wallet.signTypedData`; that generic primitive validates the domain and encoding, while the caller remains responsible for the authorization's meaning. Do not expose arbitrary typed-data signing as a dashboard endpoint.
+
+Execution coordination, recovery transaction validation/submission, owner deployment for ERC-1271 recovery, and the dashboard remain separate implementation steps. Wallet-aware verification by WaaS does not establish that Trails accepts an undeployed wallet's EIP-6492 signature. See the [swap contract and release gates](https://github.com/0xsequence-demos/waas-server-wallets/blob/docs/trails-swap-spec/docs/SWAPS.md).
+
+For explicit live discovery checks, set the ignored local `TRAILS_API_KEY` and run `pnpm test:trails`. Setting `TRAILS_TEST_WALLET` additionally requests Polygon USDC → Base USDC and Polygon POL → USDC quotes without funding or executing them. Ordinary tests use synthetic fixtures and make no network calls.
 
 Version `0.1.0` is the initial release; the API is not yet declared stable. Pin the version and review changes before upgrading. Licensed under [Apache-2.0](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/packages/server-wallet-sdk/LICENSE-APACHE-2.0); see [NOTICE](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/packages/server-wallet-sdk/NOTICE) for verifier provenance. Both files are included in the npm package.
 

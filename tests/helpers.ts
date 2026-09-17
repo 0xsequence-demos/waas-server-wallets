@@ -64,7 +64,7 @@ export class FakeWaas implements RpcTransport {
       return { wallet: this.wallet };
     }
     if (method === 'UseWallet') return { wallet: this.wallet };
-    if (method === 'SignMessage') {
+    if (method === 'SignMessage' || method === 'SignTypedData') {
       if (this.expiredOnce) {
         this.expiredOnce = false;
         throw new UpstreamError(7203, method);
@@ -77,6 +77,10 @@ export class FakeWaas implements RpcTransport {
     }
     if (method === 'IsValidMessageSignature') {
       if (body.networkFamily !== 'evm') throw new UpstreamError(7200, method);
+      return { isValid: true };
+    }
+    if (method === 'IsValidTypedDataSignature') {
+      if ('networkFamily' in body || !body.typedData) throw new UpstreamError(7200, method);
       return { isValid: true };
     }
     if (method === 'PrepareEthereumTransaction')

@@ -1,5 +1,7 @@
 # OMS server wallet dashboard — specification
 
+The finalized [Trails swap implementation specification](SWAPS.md) extends this baseline with same-chain and cross-chain swaps, persistent settlement tracking, and restricted recovery signing/calls. It describes planned work; the baseline implementation status below is unchanged.
+
 Status: implemented prototype targeting WaaS v1.1.0, with scope confirmed on 2026-09-16. Deployed to Cloudflare and tested against OMS dev on 2026-09-17 with the whitelisted OIDC audience `api.dev.polygon-dev.technology` and operator-approved all-zero debug PCR0. Live wallet lifecycle, five-chain balances and verified signatures, automatic revocation recovery, and sponsored Polygon preparation pass. Funded transfer execution remains pending. See [acceptance results](LIVE-ACCEPTANCE.md) and [deployment instructions](DEPLOYMENT.md).
 
 ## 1. Confirmed requirements

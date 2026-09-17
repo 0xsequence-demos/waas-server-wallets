@@ -4,6 +4,8 @@ A TypeScript prototype for operating OMS wallets from a shared administrator das
 
 Supports Polygon, Arbitrum, Base, BNB Chain, and Ethereum Mainnet. One immutable application identifier maps to one EVM wallet across these networks. The application controls authorization; wallet signing keys remain in WaaS.
 
+The wallet list and detail header show the combined USD value of native assets and ERC-20 tokens across the supported networks. Balances and prices come from the indexer gateway, including subsequent pages; unavailable prices or incomplete results are marked as partial.
+
 ## Run locally
 
 Requires Node 24+ and pnpm 11.8.0. No `wrangler dev` or Cloudflare emulator is involved in local development.

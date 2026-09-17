@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import type { Balance, Balances, Operation, WalletSnapshot } from '@oms/server-wallet-sdk';
 import { api } from './api';
 import { formatAmount, toUnits } from './amount';
+import { balanceValue, formatUsd, walletBalances } from './balances';
 import './style.css';
 
 interface Chain {
@@ -63,6 +64,25 @@ function ErrorBox({ message }: { message: string }) {
 }
 function Status({ value }: { value: string }) {
   return <span className={`status ${value}`}>{value.replace(/_/g, ' ')}</span>;
+}
+function WalletValue({ balances }: { balances: Balances | null | undefined }) {
+  const value = balances ? balanceValue(balances) : undefined;
+  return (
+    <div className="wallet-value">
+      <strong>
+        {balances === undefined
+          ? 'Loading…'
+          : value?.usd !== undefined && value.usd !== null
+            ? formatUsd(value.usd)
+            : 'Unavailable'}
+      </strong>
+      <small>
+        {value?.partial
+          ? 'Partial value · some balances or prices unavailable'
+          : 'Across all supported networks'}
+      </small>
+    </div>
+  );
 }
 function App() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -160,7 +180,6 @@ function Dashboard({ logout }: { logout: () => void }) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [next, setNext] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const [chain, setChain] = useState(137);
   const [selected, setSelected] = useState<string>();
   const [balances, setBalances] = useState<Record<string, Balances | null>>({});
   const [creating, setCreating] = useState(false);
@@ -171,6 +190,7 @@ function Dashboard({ logout }: { logout: () => void }) {
     const version = ++requestVersion.current;
     setLoading(true);
     setError('');
+    if (!offset) setBalances({});
     try {
       const data = await api<{ wallets: Wallet[]; nextOffset: number | null }>(
         `/wallets?search=${encodeURIComponent(search)}&offset=${offset}`,
@@ -185,7 +205,7 @@ function Dashboard({ logout }: { logout: () => void }) {
             .filter((wallet) => wallet.snapshot?.wallet)
             .map(async (wallet) => {
               try {
-                const result = await api<Balances>(`/wallets/${wallet.id}/balances`);
+                const result = await walletBalances(wallet.id);
                 if (version === requestVersion.current)
                   setBalances((prev) => ({ ...prev, [wallet.id]: result }));
               } catch {
@@ -211,7 +231,6 @@ function Dashboard({ logout }: { logout: () => void }) {
     }, 200);
     return () => clearTimeout(timer);
   }, [search]);
-  const selectedChain = config?.chains.find((c) => c.id === chain);
   return (
     <div className="shell">
       <aside>
@@ -268,11 +287,24 @@ function Dashboard({ logout }: { logout: () => void }) {
                 <p className="subtle">Create and manage wallets from your backend.</p>
               </div>
               <button
-                className="primary"
+                className="primary create-wallet-button"
                 disabled={!config || config.missing.length > 0}
                 onClick={() => setCreating(true)}
               >
-                ＋ Create wallet
+                <svg
+                  className="button-icon"
+                  viewBox="0 0 20 20"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M10 4v12M4 10h12" />
+                </svg>
+                Create wallet
               </button>
             </section>
             {config && config.missing.length > 0 && (
@@ -337,17 +369,6 @@ function Dashboard({ logout }: { logout: () => void }) {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
-                <select
-                  aria-label="Balance network"
-                  value={chain}
-                  onChange={(e) => setChain(Number(e.target.value))}
-                >
-                  {config?.chains.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
               </div>
               <ErrorBox message={error} />
               <div className="table-scroll">
@@ -356,7 +377,7 @@ function Dashboard({ logout }: { logout: () => void }) {
                     <tr>
                       <th>Wallet</th>
                       <th>Address</th>
-                      <th>{selectedChain?.symbol ?? 'Native'} balance</th>
+                      <th>Balance (USD)</th>
                       <th>Credential</th>
                       <th>Created</th>
                     </tr>
@@ -364,9 +385,6 @@ function Dashboard({ logout }: { logout: () => void }) {
                   <tbody>
                     {wallets.map((wallet) => {
                       const result = balances[wallet.id];
-                      const native = result?.items.find(
-                        (b) => b.chainId === chain && b.asset === 'native',
-                      );
                       const state = wallet.snapshot?.disabled
                         ? 'disabled'
                         : wallet.snapshot?.expiresAt &&
@@ -376,9 +394,13 @@ function Dashboard({ logout }: { logout: () => void }) {
                             ? 'active'
                             : 'pending';
                       return (
-                        <tr key={wallet.id}>
+                        <tr
+                          key={wallet.id}
+                          className="wallet-row"
+                          onClick={() => setSelected(wallet.id)}
+                        >
                           <td>
-                            <button className="wallet-link" onClick={() => setSelected(wallet.id)}>
+                            <button className="wallet-link">
                               <span className="wallet-mark">
                                 {wallet.name.slice(0, 1).toUpperCase()}
                               </span>
@@ -390,14 +412,7 @@ function Dashboard({ logout }: { logout: () => void }) {
                           </td>
                           <td className="mono">{short(wallet.snapshot?.wallet?.address)}</td>
                           <td>
-                            <strong>
-                              {native
-                                ? formatAmount(native.balance, native.decimals)
-                                : result === undefined
-                                  ? 'Loading…'
-                                  : 'Unavailable'}
-                            </strong>
-                            {native && <small>{native.symbol}</small>}
+                            <WalletValue balances={wallet.snapshot?.wallet ? result : null} />
                           </td>
                           <td>
                             <Status value={state} />
@@ -527,7 +542,7 @@ function WalletDetail({
   back: () => void;
 }) {
   const [wallet, setWallet] = useState<Wallet>();
-  const [balances, setBalances] = useState<Balances>();
+  const [balances, setBalances] = useState<Balances | null>();
   const [ops, setOps] = useState<Operation[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -540,8 +555,10 @@ function WalletDetail({
       const row = await api<Wallet>(`/wallets/${id}`);
       setWallet(row);
       setOps((await api<{ operations: Operation[] }>(`/wallets/${id}/operations`)).operations);
-      if (row.snapshot?.wallet) setBalances(await api<Balances>(`/wallets/${id}/balances`));
+      if (row.snapshot?.wallet) setBalances(await walletBalances(id));
+      else setBalances(null);
     } catch (e) {
+      setBalances(null);
       setError(errorText(e));
     } finally {
       setBusy(false);
@@ -565,7 +582,7 @@ function WalletDetail({
             if (result.operation) {
               setOps((old) => old.map((item) => (item.id === op.id ? result.operation! : item)));
               if (result.operation.status === 'executed' && op.status !== 'executed')
-                setBalances(await api<Balances>(`/wallets/${id}/balances`));
+                setBalances(await walletBalances(id));
             }
           } catch (e) {
             setError(errorText(e));
@@ -586,27 +603,6 @@ function WalletDetail({
       setError(errorText(e));
     } finally {
       setBusy(false);
-    }
-  }
-  async function moreBalances() {
-    if (balances?.nextPage === undefined) return;
-    try {
-      const next = await api<Balances>(`/wallets/${id}/balances?page=${balances.nextPage}`);
-      setBalances({
-        ...next,
-        items: [
-          ...balances.items,
-          ...next.items.filter(
-            (item) =>
-              !balances.items.some(
-                (old) => old.asset === item.asset && old.chainId === item.chainId,
-              ),
-          ),
-        ],
-        errors: [...balances.errors, ...next.errors],
-      });
-    } catch (e) {
-      setError(errorText(e));
     }
   }
   const address = wallet?.snapshot?.wallet?.address;
@@ -654,6 +650,10 @@ function WalletDetail({
         </div>
       </section>
       <ErrorBox message={error} />
+      <section className="portfolio-value" aria-label="Total wallet balance">
+        <span>Total balance (USD)</span>
+        <WalletValue balances={balances} />
+      </section>
       <section className="credential-bar">
         <div>
           <Status value={wallet?.snapshot?.disabled ? 'disabled' : 'managed'} />
@@ -738,11 +738,7 @@ function WalletDetail({
                   </td>
                   <td>{config.chains.find((c) => c.id === item.chainId)?.name}</td>
                   <td className="mono">{formatAmount(item.balance, item.decimals)}</td>
-                  <td>
-                    {item.balanceUSD
-                      ? `$${Number(item.balanceUSD).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-                      : '—'}
-                  </td>
+                  <td>{item.balanceUSD ? formatUsd(item.balanceUSD) : '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -755,14 +751,7 @@ function WalletDetail({
           </div>
         )}
         {balances?.nextPage !== undefined && (
-          <button
-            className="secondary more"
-            onClick={() => {
-              void moreBalances();
-            }}
-          >
-            Load more assets
-          </button>
+          <div className="notice">Some assets could not be loaded. Refresh to retry.</div>
         )}
       </section>
       <section className="panel activity">

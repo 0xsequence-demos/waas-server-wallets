@@ -35,7 +35,10 @@ test('admin creates a wallet, reviews a sponsored transfer, and signs a message'
     if (path === '/config')
       return reply({
         missing: [],
-        chains: [{ id: 137, name: 'Polygon', symbol: 'POL', explorer: 'https://polygonscan.com' }],
+        chains: [
+          { id: 137, name: 'Polygon', symbol: 'POL', explorer: 'https://polygonscan.com' },
+          { id: 8453, name: 'Base', symbol: 'ETH', explorer: 'https://basescan.org' },
+        ],
         issuer: 'https://issuer.example',
         audience: 'oms-server-wallet',
         waasVersion: '1.1.0',
@@ -47,7 +50,8 @@ test('admin creates a wallet, reviews a sponsored transfer, and signs a message'
       return reply(wallet);
     }
     if (path === '/wallets/local-1') return reply(wallet);
-    if (path.endsWith('/balances'))
+    if (path.endsWith('/balances')) {
+      const secondPage = new URL(route.request().url()).searchParams.get('page') === '1';
       return reply({
         items: [
           {
@@ -57,11 +61,37 @@ test('admin creates a wallet, reviews a sponsored transfer, and signs a message'
             symbol: 'POL',
             balance: '5000000000000000000',
             decimals: 18,
+            balanceUSD: '2.50',
           },
+          ...(secondPage
+            ? [
+                {
+                  chainId: 8453,
+                  asset: '0x3333333333333333333333333333333333333333',
+                  name: 'USD Coin',
+                  symbol: 'USDC',
+                  balance: '12345000',
+                  decimals: 6,
+                  balanceUSD: '12.345',
+                },
+              ]
+            : [
+                {
+                  chainId: 8453,
+                  asset: 'native',
+                  name: 'Ether',
+                  symbol: 'ETH',
+                  balance: '10000000000000000',
+                  decimals: 18,
+                  balanceUSD: '50',
+                },
+              ]),
         ],
         errors: [],
+        ...(secondPage ? {} : { nextPage: 1 }),
         fetchedAt: new Date().toISOString(),
       });
+    }
     if (path.endsWith('/transfers')) {
       const body = route.request().postDataJSON() as { id: string; amount: string };
       expect(body.amount).toBe('1000000000000000001');
@@ -118,6 +148,19 @@ test('admin creates a wallet, reviews a sponsored transfer, and signs a message'
     .getByRole('button', { name: 'Create wallet', exact: true })
     .click();
   await expect(page.getByRole('heading', { name: 'Customer treasury' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Total wallet balance' })).toContainText('$64.85');
+  await page.getByRole('button', { name: 'All wallets' }).click();
+  const walletRow = page.getByRole('row').filter({ hasText: 'Customer treasury' });
+  await expect(walletRow).toContainText('$64.85');
+  await expect(page.getByLabel('Balance network')).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/wallet-list.png', fullPage: true });
+  // The address cell opens the wallet, as well as the keyboard-accessible name button.
+  await walletRow.getByRole('cell').nth(1).click();
+  await expect(page.getByRole('heading', { name: 'Customer treasury' })).toBeVisible();
+  await page.getByRole('button', { name: 'All wallets' }).click();
+  await page.getByRole('button', { name: /Customer treasury/ }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('region', { name: 'Total wallet balance' })).toContainText('$64.85');
   await page.getByRole('button', { name: 'Send transfer' }).click();
   await page.getByLabel('Recipient address').fill('0x2222222222222222222222222222222222222222');
   await page.getByRole('textbox', { name: /^Amount/ }).fill('1.000000000000000001');

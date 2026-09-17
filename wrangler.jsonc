@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "oms-server-wallet-dashboard",
+  "account_id": "b6c780e2a453a8593576535e3e81a7cd",
+  "workers_dev": true,
+  "preview_urls": false,
+  "main": "apps/server/worker.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "dist/dashboard",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/.well-known/*", "/oidc/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "oms-server-wallet-dashboard",
+      "database_id": "a2f575c6-6c3e-4317-9a2c-9271c50746c9",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "durable_objects": { "bindings": [{ "name": "WALLETS", "class_name": "WalletCoordinator" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WalletCoordinator"] }],
+  "vars": {
+    "OIDC_AUDIENCE": "api.dev.polygon-dev.technology",
+    "OIDC_ISSUER": "https://oms-server-wallet-dashboard.0xsequence.workers.dev",
+    "APP_ORIGIN": "https://oms-server-wallet-dashboard.0xsequence.workers.dev",
+    "TRUSTED_PCR0S": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "OIDC_ADDITIONAL_PUBLIC_JWKS": "",
+  },
+  "observability": { "enabled": true, "traces": { "enabled": true, "head_sampling_rate": 0.1 } },
+}

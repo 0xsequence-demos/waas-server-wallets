@@ -1,0 +1,9 @@
+{
+  "issuer": "https://oms-server-wallet-dashboard.0xsequence.workers.dev",
+  "discoveryUrl": "https://oms-server-wallet-dashboard.0xsequence.workers.dev/.well-known/openid-configuration",
+  "jwksUri": "https://oms-server-wallet-dashboard.0xsequence.workers.dev/oidc/jwks",
+  "audience": "api.dev.polygon-dev.technology",
+  "signingAlgorithm": "ES256",
+  "authMode": "id-token",
+  "identityType": "oidc"
+}

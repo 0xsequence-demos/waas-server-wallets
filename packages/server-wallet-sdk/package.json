@@ -1,0 +1,31 @@
+{
+  "name": "@oms/server-wallet-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist",
+    "NOTICE",
+    "LICENSE-APACHE-2.0"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@peculiar/x509": "2.0.0",
+    "cbor-x": "1.6.6",
+    "reflect-metadata": "0.2.2",
+    "viem": "2.56.3",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

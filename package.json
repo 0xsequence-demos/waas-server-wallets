@@ -1,0 +1,57 @@
+{
+  "name": "oms-server-wallet-dashboard",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "setup": "node --import tsx scripts/setup.ts",
+    "dev": "concurrently -k -n api,ui 'pnpm dev:api' 'vite --host 127.0.0.1'",
+    "dev:api": "node --import tsx --env-file-if-exists=.env --watch apps/server/node.ts",
+    "build": "pnpm --filter @oms/server-wallet-sdk build && vite build",
+    "typecheck": "tsc --noEmit && pnpm --filter @oms/server-wallet-sdk typecheck",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:live": "node --import tsx --env-file=.env scripts/live-acceptance.ts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "test:browser": "playwright test",
+    "test:workers": "WRANGLER_LOG_PATH=.wrangler/logs vitest run --config vitest.worker.config.ts",
+    "cf:types": "CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false WRANGLER_LOG_PATH=.wrangler/logs wrangler types --include-runtime false",
+    "cf:check": "WRANGLER_LOG_PATH=.wrangler/logs wrangler deploy --dry-run --outdir .worker-build",
+    "deploy": "pnpm build && wrangler deploy"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.1",
+    "@oms/server-wallet-sdk": "workspace:*",
+    "hono": "4.13.5",
+    "jose": "6.2.10",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.1.3",
+    "@cloudflare/workers-types": "5.20260902.1",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.62.1",
+    "@types/node": "26.4.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "@vitejs/plugin-react": "6.1.1",
+    "@vitest/coverage-v8": "4.1.11",
+    "cbor-x": "1.6.4",
+    "concurrently": "10.0.5",
+    "eslint": "10.9.1",
+    "prettier": "3.9.6",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.69.0",
+    "vite": "8.2.2",
+    "vitest": "4.1.11",
+    "wrangler": "4.128.0"
+  }
+}

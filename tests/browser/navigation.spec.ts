@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 async function fixture(page: Page, authenticated = true) {
+  let expireOnRead = false;
   const wallets = ['one', 'two'].map((number) => ({
     id: `wallet-${number}`,
     identifier: `customer-${number}`,
@@ -20,6 +21,10 @@ async function fixture(page: Page, authenticated = true) {
       authenticated = path === '/login';
       return reply({ ok: true });
     }
+    if (expireOnRead && path === '/wallets/wallet-two') {
+      authenticated = false;
+      expireOnRead = false;
+    }
     if (!authenticated) return reply({ message: 'Sign in to continue.' }, 401);
     if (path === '/config')
       return reply({ missing: [], chains: [{ id: 137, name: 'Polygon', symbol: 'POL' }] });
@@ -31,8 +36,8 @@ async function fixture(page: Page, authenticated = true) {
     return wallet ? reply(wallet) : reply({ message: 'Wallet not found.' }, 404);
   });
   return {
-    expire: () => {
-      authenticated = false;
+    expireOnNextWalletRead: () => {
+      expireOnRead = true;
     },
   };
 }
@@ -72,7 +77,8 @@ test('a direct wallet URL survives login, reload, and session expiry', async ({ 
   await expect(page.getByRole('heading', { name: 'Wallet two' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Wallet two' })).toBeVisible();
-  session.expire();
+  await expect(page.getByRole('button', { name: '↻ Refresh', exact: true })).toBeEnabled();
+  session.expireOnNextWalletRead();
   await page.getByRole('button', { name: 'Refresh', exact: false }).click();
   await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
   await page.getByLabel('Password', { exact: true }).fill('fixture-password');

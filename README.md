@@ -6,6 +6,8 @@ Supports Polygon, Arbitrum, Base, BNB Chain, and Ethereum Mainnet. One immutable
 
 The wallet list and detail header show the combined USD value of native assets and ERC-20 tokens across the supported networks. Balances and prices come from the indexer gateway, including subsequent pages; unavailable prices or incomplete results are marked as partial.
 
+Wallet details have shareable URLs at `/wallets/<wallet-id>`. Browser Back/Forward and refresh preserve the selected page, and signing in from a wallet link returns to that wallet. Open wallet links in a new tab with the usual browser controls.
+
 ## Run locally
 
 Requires Node 24+ and pnpm 11.8.0. No `wrangler dev` or Cloudflare emulator is involved in local development.

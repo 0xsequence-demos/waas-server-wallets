@@ -4,6 +4,7 @@ import type { Balance, Balances, Operation, WalletSnapshot } from '@oms/server-w
 import { api } from './api';
 import { formatAmount, toUnits } from './amount';
 import { balanceValue, formatUsd, walletBalances } from './balances';
+import { Link, navigate, readRoute, usePathname, walletPath } from './navigation';
 import './style.css';
 
 interface Chain {
@@ -176,11 +177,12 @@ function App() {
   );
 }
 function Dashboard({ logout }: { logout: () => void }) {
+  const pathname = usePathname();
+  const route = readRoute(pathname);
   const [config, setConfig] = useState<Configuration>();
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [next, setNext] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<string>();
   const [balances, setBalances] = useState<Record<string, Balances | null>>({});
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
@@ -226,11 +228,16 @@ function Dashboard({ logout }: { logout: () => void }) {
       .catch((e) => setError(errorText(e)));
   }, []);
   useEffect(() => {
+    setCreating(false);
+    if (route.kind !== 'list') return;
     const timer = setTimeout(() => {
       void load();
     }, 200);
-    return () => clearTimeout(timer);
-  }, [search]);
+    return () => {
+      clearTimeout(timer);
+      requestVersion.current++;
+    };
+  }, [search, pathname]);
   return (
     <div className="shell">
       <aside>
@@ -244,9 +251,13 @@ function Dashboard({ logout }: { logout: () => void }) {
           </div>
         </div>
         <p className="nav-label">WORKSPACE</p>
-        <button className="nav-item active" onClick={() => setSelected(undefined)}>
+        <Link
+          className="nav-item active"
+          href="/"
+          aria-current={route.kind === 'list' ? 'page' : undefined}
+        >
           ▦ &nbsp; Wallets
-        </button>
+        </Link>
         <div className="sidebar-bottom">
           <span className="status active">● &nbsp; OMS infrastructure</span>
           <p>
@@ -268,16 +279,24 @@ function Dashboard({ logout }: { logout: () => void }) {
             A
           </span>
         </header>
-        {selected && config ? (
-          <WalletDetail
-            key={selected}
-            id={selected}
-            config={config}
-            back={() => {
-              setSelected(undefined);
-              void load();
-            }}
-          />
+        {route.kind === 'wallet' ? (
+          config ? (
+            <WalletDetail key={route.id} id={route.id} config={config} />
+          ) : (
+            <section className="page-title">
+              <h1>Loading wallet…</h1>
+              <ErrorBox message={error} />
+            </section>
+          )
+        ) : route.kind === 'not-found' ? (
+          <section className="page-title">
+            <div>
+              <h1>Page not found</h1>
+              <Link className="back" href="/">
+                ← All wallets
+              </Link>
+            </div>
+          </section>
         ) : (
           <>
             <section className="page-title">
@@ -397,10 +416,20 @@ function Dashboard({ logout }: { logout: () => void }) {
                         <tr
                           key={wallet.id}
                           className="wallet-row"
-                          onClick={() => setSelected(wallet.id)}
+                          onClick={(event) => {
+                            if (
+                              (event.target as HTMLElement).closest('a, button') ||
+                              event.metaKey ||
+                              event.ctrlKey ||
+                              event.shiftKey ||
+                              event.altKey
+                            )
+                              return;
+                            navigate(walletPath(wallet.id));
+                          }}
                         >
                           <td>
-                            <button className="wallet-link">
+                            <Link className="wallet-link" href={walletPath(wallet.id)}>
                               <span className="wallet-mark">
                                 {wallet.name.slice(0, 1).toUpperCase()}
                               </span>
@@ -408,7 +437,7 @@ function Dashboard({ logout }: { logout: () => void }) {
                                 {wallet.name}
                                 <small>{wallet.identifier}</small>
                               </span>
-                            </button>
+                            </Link>
                           </td>
                           <td className="mono">{short(wallet.snapshot?.wallet?.address)}</td>
                           <td>
@@ -456,8 +485,7 @@ function Dashboard({ logout }: { logout: () => void }) {
             close={() => setCreating(false)}
             created={(id) => {
               setCreating(false);
-              setSelected(id);
-              void load();
+              navigate(walletPath(id));
             }}
           />
         )}
@@ -532,15 +560,7 @@ function CreateWallet({ close, created }: { close: () => void; created: (id: str
     </Modal>
   );
 }
-function WalletDetail({
-  id,
-  config,
-  back,
-}: {
-  id: string;
-  config: Configuration;
-  back: () => void;
-}) {
+function WalletDetail({ id, config }: { id: string; config: Configuration }) {
   const [wallet, setWallet] = useState<Wallet>();
   const [balances, setBalances] = useState<Balances | null>();
   const [ops, setOps] = useState<Operation[]>([]);
@@ -608,13 +628,13 @@ function WalletDetail({
   const address = wallet?.snapshot?.wallet?.address;
   return (
     <>
-      <button className="back" onClick={back}>
+      <Link className="back" href="/">
         ← All wallets
-      </button>
+      </Link>
       <section className="page-title">
         <div>
           <p className="eyebrow">{wallet?.identifier ?? 'WALLET'}</p>
-          <h1>{wallet?.name ?? 'Loading wallet…'}</h1>
+          <h1>{wallet?.name ?? (error ? 'Wallet unavailable' : 'Loading wallet…')}</h1>
           <button
             className="address"
             disabled={!address}

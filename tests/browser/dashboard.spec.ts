@@ -148,17 +148,18 @@ test('admin creates a wallet, reviews a sponsored transfer, and signs a message'
     .getByRole('button', { name: 'Create wallet', exact: true })
     .click();
   await expect(page.getByRole('heading', { name: 'Customer treasury' })).toBeVisible();
+  await expect(page).toHaveURL(/\/wallets\/local-1$/);
   await expect(page.getByRole('region', { name: 'Total wallet balance' })).toContainText('$64.85');
-  await page.getByRole('button', { name: 'All wallets' }).click();
+  await page.getByRole('link', { name: 'All wallets' }).click();
   const walletRow = page.getByRole('row').filter({ hasText: 'Customer treasury' });
   await expect(walletRow).toContainText('$64.85');
   await expect(page.getByLabel('Balance network')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/wallet-list.png', fullPage: true });
-  // The address cell opens the wallet, as well as the keyboard-accessible name button.
+  // The address cell opens the wallet, as well as the keyboard-accessible name link.
   await walletRow.getByRole('cell').nth(1).click();
   await expect(page.getByRole('heading', { name: 'Customer treasury' })).toBeVisible();
-  await page.getByRole('button', { name: 'All wallets' }).click();
-  await page.getByRole('button', { name: /Customer treasury/ }).focus();
+  await page.getByRole('link', { name: 'All wallets' }).click();
+  await page.getByRole('link', { name: /Customer treasury/ }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('region', { name: 'Total wallet balance' })).toContainText('$64.85');
   await page.getByRole('button', { name: 'Send transfer' }).click();

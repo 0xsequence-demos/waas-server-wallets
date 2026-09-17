@@ -92,6 +92,28 @@ try {
       passed: 'automatic recovery from remote revocation preserves wallet and signs',
     }),
   );
+  for (const chainId of [137, 8453]) {
+    // An inert probe, with no transfer, permit or recovery authorization.
+    const probe = await client.signTypedData(crypto.randomUUID(), chainId, {
+      domain: {
+        name: 'OMS SDK compatibility probe',
+        version: '1',
+        chainId,
+        verifyingContract: initial.wallet.address,
+      },
+      types: { Probe: [{ name: 'message', type: 'string' }] },
+      primaryType: 'Probe',
+      message: { message: `SDK typed-data verification ${crypto.randomUUID()}` },
+    });
+    assert.equal(probe.verified, true);
+    console.log(
+      JSON.stringify({
+        passed: 'attested typed-data signing and wallet-aware verification',
+        chainId,
+        signatureEnvelope: probe.signature!.endsWith('6492'.repeat(16)) ? 'eip6492' : 'wallet',
+      }),
+    );
+  }
 } finally {
   await client.setDisabled(true);
   console.log(JSON.stringify({ passed: 'standalone test credential revoked and wallet disabled' }));

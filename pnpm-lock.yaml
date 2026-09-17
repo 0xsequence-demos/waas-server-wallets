@@ -90,6 +90,9 @@ importers:
 
   packages/server-wallet-sdk:
     dependencies:
+      '@0xsequence/wallet-primitives':
+        specifier: 3.0.11
+        version: 3.0.11(typescript@5.9.3)(zod@4.5.4)
       '@peculiar/x509':
         specifier: 2.0.0
         version: 2.0.0
@@ -111,6 +114,9 @@ importers:
         version: 5.9.3
 
 packages:
+
+  '@0xsequence/wallet-primitives@3.0.11':
+    resolution: {integrity: sha512-J5eOXMZK6oJhqq1m42TdpuXwKjO5XfZnTSeoDF3bgcRk867qkDMtrjuWQSmAfKbPf3P3JY8SIgB5N4dUSilPGg==}
 
   '@adraffy/ens-normalize@1.11.1':
     resolution: {integrity: sha512-nhCBV3quEgesuf7c7KYfperqSS14T8bYuvJ8PcLJp6znkZpFc0AuW4qBtr8eKVyPPe/8RSr7sglCWPU5eaxwKQ==}
@@ -1563,6 +1569,14 @@ packages:
       typescript:
         optional: true
 
+  ox@0.9.17:
+    resolution: {integrity: sha512-rKAnhzhRU3Xh3hiko+i1ZxywZ55eWQzeS/Q4HRKLx2PqfHOolisZHErSsJVipGlmQKHW5qwOED/GighEw9dbLg==}
+    peerDependencies:
+      typescript: '>=5.4.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   p-limit@3.1.0:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
     engines: {node: '>=10'}
@@ -1934,6 +1948,13 @@ packages:
     resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
 
 snapshots:
+
+  '@0xsequence/wallet-primitives@3.0.11(typescript@5.9.3)(zod@4.5.4)':
+    dependencies:
+      ox: 0.9.17(typescript@5.9.3)(zod@4.5.4)
+    transitivePeerDependencies:
+      - typescript
+      - zod
 
   '@adraffy/ens-normalize@1.11.1': {}
 
@@ -3159,6 +3180,21 @@ snapshots:
       word-wrap: 1.2.5
 
   ox@0.14.44(typescript@5.9.3)(zod@4.5.4):
+    dependencies:
+      '@adraffy/ens-normalize': 1.11.1
+      '@noble/ciphers': 1.3.0
+      '@noble/curves': 1.9.1
+      '@noble/hashes': 1.8.0
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
+      abitype: 1.2.3(typescript@5.9.3)(zod@4.5.4)
+      eventemitter3: 5.0.1
+    optionalDependencies:
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - zod
+
+  ox@0.9.17(typescript@5.9.3)(zod@4.5.4):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0

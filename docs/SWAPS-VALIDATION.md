@@ -1,5 +1,9 @@
 # Swap implementation validation — 2026-09-18
 
+**Update after the first deployment:** the original preparation results below are historical. The deployment follow-up installed the missing Trails secret and applied `0002_swaps.sql`. It also reproduced and fixed native `fetch` receiver failures in Workers, which the original injected-fetch tests did not exercise. The corrected SDK remains an unpublished 0.2.0 candidate; no funded acceptance was performed.
+
+The corrected candidate at `.data/sdk-release/polygonlabs-oms-server-wallet-sdk-0.2.0.tgz` passed clean-consumer verification at `2026-09-18T07:25:21.269Z`, with integrity `sha512-0Bk5WeVytupVa5B1FuhTLR4X6aq0K3F3YsGBFvo1H2kLByGKOQszWE2M+ByGGgEKWyMst9BUk8krry1Brai0UA==`. Use this corrected artifact instead of the original candidate below. Typecheck/lint, 179 Node/API tests, 13 Workers tests, SDK/UI builds, packaging and Worker dry-run pass. The four new Workers regressions preserve native receiver checks rather than replacing fetch with an arrow-function fixture.
+
 The SDK, backend and dashboard implementation is complete on `feat/trails-swaps-complete`, based directly on merged `master` commit `41eb93f`. This report records local verification of that implementation. SDK publication, Cloudflare deployment and funded acceptance are deliberately deferred to the package owner's next session. Nothing in this preparation sent funds or signed a live recovery authorization.
 
 ## Automated and local checks

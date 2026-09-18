@@ -52,7 +52,8 @@ export class WaasTransport implements RpcTransport {
         this.environment.projectId,
         body,
       );
-    const response = await this.fetcher(this.environment.origin + path, {
+    const fetcher = this.fetcher;
+    const response = await fetcher(this.environment.origin + path, {
       method: 'POST',
       body,
       headers,

@@ -63,7 +63,8 @@ export class IndexerClient {
     address = getAddress(address);
     if (!Number.isInteger(page) || page < 0 || page > 1000)
       throw new WalletError('INVALID_PAGE', 'Invalid balance page.');
-    const response = await this.fetcher(this.environment.indexerUrl, {
+    const fetcher = this.fetcher;
+    const response = await fetcher(this.environment.indexerUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

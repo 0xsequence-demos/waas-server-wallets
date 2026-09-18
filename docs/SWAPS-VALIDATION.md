@@ -1,8 +1,27 @@
 # Swap implementation validation — 2026-09-18
 
-**Update after the first deployment:** the original preparation results below are historical. The deployment follow-up installed the missing Trails secret and applied `0002_swaps.sql`. It also reproduced and fixed native `fetch` receiver failures in Workers, which the original injected-fetch tests did not exercise. The corrected SDK remains an unpublished 0.2.0 candidate; no funded acceptance was performed.
+## Published SDK 0.2.0
 
-The corrected candidate at `.data/sdk-release/polygonlabs-oms-server-wallet-sdk-0.2.0.tgz` passed clean-consumer verification at `2026-09-18T07:25:21.269Z`, with integrity `sha512-0Bk5WeVytupVa5B1FuhTLR4X6aq0K3F3YsGBFvo1H2kLByGKOQszWE2M+ByGGgEKWyMst9BUk8krry1Brai0UA==`. Use this corrected artifact instead of the original candidate below. Typecheck/lint, 179 Node/API tests, 13 Workers tests, SDK/UI builds, packaging and Worker dry-run pass. The four new Workers regressions preserve native receiver checks rather than replacing fetch with an arrow-function fixture.
+[`@polygonlabs/oms-server-wallet-sdk@0.2.0`](https://www.npmjs.com/package/@polygonlabs/oms-server-wallet-sdk/v/0.2.0) was published with public access and the `latest` tag at **2026-09-18T11:04:17.081Z**, at the package owner's request. It includes the complete Trails workflow and the Workers native-fetch fix.
+
+- Runtime source: merged master `8c6c75beacafe069358d1bcebfcbb2e72e9068cd`; [CI passed](https://github.com/0xsequence-demos/waas-server-wallets/actions/runs/35333216609).
+- Archive source: `a2201bdb413ab36ead938923472cd7f17796052a`, which only refreshes the package README relative to that master commit.
+- Integrity: `sha512-txtCBkHYmg+6Nc5MRXyBqcqONdmIji2fgIsdVPEsqunrNw//fAo8k2Kzh9rcUUiWnXW2Qp7j/jn38h/wWf/b1g==`.
+- [Registry archive](https://registry.npmjs.org/@polygonlabs/oms-server-wallet-sdk/-/oms-server-wallet-sdk-0.2.0.tgz): 57 files, matching the locally inspected archive byte for byte.
+- Before publication: `pnpm test:package` passed at `2026-09-18T11:01:20.788Z`.
+- After publication: a new external consumer installed the exact version by registry name and passed ESM imports of root and `/trails`, strict NodeNext compilation, quote/recovery codecs and encrypted storage checks at `2026-09-18T11:05:58.415Z`. Registry metadata, downloaded tarball integrity, lockfile integrity and all 57 installed files matched the inspected release.
+
+The registry consumer had a temporary [pnpm release-age exception](https://pnpm.io/settings/dependency-resolution#minimumreleaseageexclude) for only `@polygonlabs/oms-server-wallet-sdk@0.2.0`, after its downloaded archive passed integrity verification. Other dependency checks and machine/repository settings were preserved. Local reports are `.data/sdk-release/validation.json` and `.data/sdk-release/publication.json`; they are not committed.
+
+The demo is deployed with swaps enabled, and the operator reports successful swaps. The detailed funded acceptance matrix, including recovery scenarios, still needs scenario-specific evidence. Publication verification sent no funds and made no live signing, activation or recovery calls.
+
+## Historical deployment correction
+
+The deployment follow-up installed the missing Trails secret and applied `0002_swaps.sql`. It also reproduced and fixed native `fetch` receiver failures in Workers, which the original injected-fetch tests did not exercise. The corrected SDK was an unpublished 0.2.0 candidate at that point; no funded acceptance was performed during that follow-up.
+
+The corrected candidate passed clean-consumer verification at `2026-09-18T07:25:21.269Z`, with integrity `sha512-0Bk5WeVytupVa5B1FuhTLR4X6aq0K3F3YsGBFvo1H2kLByGKOQszWE2M+ByGGgEKWyMst9BUk8krry1Brai0UA==`. The published archive above supersedes this candidate after the package README refresh. Typecheck/lint, 179 Node/API tests, 13 Workers tests, SDK/UI builds, packaging and Worker dry-run passed. The four new Workers regressions preserve native receiver checks rather than replacing fetch with an arrow-function fixture.
+
+## Original preparation report (historical)
 
 The SDK, backend and dashboard implementation is complete on `feat/trails-swaps-complete`, based directly on merged `master` commit `41eb93f`. This report records local verification of that implementation. SDK publication, Cloudflare deployment and funded acceptance are deliberately deferred to the package owner's next session. Nothing in this preparation sent funds or signed a live recovery authorization.
 
@@ -42,6 +61,6 @@ Source compatibility review uses the pinned Trails SDK/API/contract revisions in
 
 The recovery implementation contains a [documented compatibility correction](SWAPS.md#recovery-compatibility-correction-2026-09-18): a recognized utility sweep is validated and converted into exact direct refunds from the intent, bound to a new explicit review, while the original response is retained. Regression tests prove encoding/hash and workflow behavior. Acceptance against deployed contracts is still pending. Price impact is displayed directly as a percentage, matching [the API calculation](https://github.com/0xsequence/trails-api/blob/352bcb89c20a7c8111062d38a3d0cc603c65f860/lib/intentmachine/protocol/price_impact.go).
 
-## Remaining release gates
+## Release gates at original preparation (historical)
 
 The prepared archive has not been published, the demo has not been redeployed, no remote secrets or migrations were changed, and no funded swap/recovery has been attempted. New execution defaults to paused. The next session is review/merge, owner-present publication, staged deployment and the explicitly budgeted [funded acceptance matrix](SWAPS-ROLLOUT.md#funded-acceptance-record-pending), including deployed/initially undeployed-owner recovery. Offline and read-only success do not establish those live capabilities.

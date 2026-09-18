@@ -57,7 +57,8 @@ export class EvmChainReader implements ChainReader {
       { jsonrpc: '2.0', id: 2, method, params },
     ];
     try {
-      const response = await this.fetcher(url.toString(), {
+      const fetcher = this.fetcher;
+      const response = await fetcher(url.toString(), {
         method: 'POST',
         redirect: 'manual',
         signal: AbortSignal.timeout(15_000),

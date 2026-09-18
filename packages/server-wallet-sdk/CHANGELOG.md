@@ -8,6 +8,7 @@
 - Add verified EIP-712 signing and narrow sponsored owner deployment/recovery operations. Validate Sequence v3 payloads, factory/guest deployment envelopes and hashes before authorizing calls.
 - Convert the API's recognized non-delegate utility sweep to direct refunds of reviewed intent-owned balances, retaining the original envelope for audit. Record actual/partial recovery amounts.
 - Export durable storage/scheduling contracts and sanitized activity views. Keep application, Workers and UI code outside the package.
+- Invoke native fetch without rebinding it to SDK clients, preserving compatibility with Cloudflare Workers across Trails, RPC, WaaS and indexer requests.
 
 The existing root wallet API and WaaS v1.1.0 attestation/authentication contract remain in place. All base-unit amounts use decimal strings. Consumers must supply encrypted durable state and per-wallet exclusive coordination. Funded service acceptance is documented separately in the repository; automated fixtures do not establish live sponsorship compatibility.
 

@@ -92,7 +92,9 @@ export class TrailsClient {
     let response: Response;
     let text: string;
     try {
-      response = await this.fetcher(`${this.baseUrl}/rpc/Trails/${method}`, {
+      // Native Workers fetch rejects a client instance as its `this` receiver.
+      const fetcher = this.fetcher;
+      response = await fetcher(`${this.baseUrl}/rpc/Trails/${method}`, {
         method: 'POST',
         headers: { ...this.headers },
         body,

@@ -42,7 +42,7 @@ npm install @polygonlabs/oms-server-wallet-sdk@0.2.0
 
 Follow the [Node.js / TypeScript integration walkthrough](docs/NODE-INTEGRATION.md), covering OIDC registration, credentials, wallet creation, signing, and transaction sending. The dashboard uses the same package through a workspace dependency for local development. See also the [detailed specification](docs/SPEC.md), [SDK API and integration contract](packages/server-wallet-sdk/README.md), and [SDK release procedure](docs/SDK-RELEASE.md).
 
-Swaps and bridges are implemented at `/wallets/<id>/swap`, with persistent activity at `/wallets/<id>/swaps/<swap>`. They use a separate backend Trails key, curated assets and fresh chain reads. Node runs a persistent SQLite scheduler; Workers use per-wallet alarms. New execution defaults to paused while funded acceptance is pending. See [backend SDK swaps](docs/SWAPS-INTEGRATION.md) and the [publication/deployment handoff](docs/SWAPS-ROLLOUT.md).
+Swaps and bridges are implemented at `/wallets/<id>/swap`, with persistent activity at `/wallets/<id>/swaps/<swap>`. They use a separate backend Trails key, curated assets and fresh chain reads. Node runs a persistent SQLite scheduler; Workers use per-wallet alarms. The deployed demo enables swaps for operator testing; local configuration defaults to paused. Funded acceptance remains pending. See [backend SDK swaps](docs/SWAPS-INTEGRATION.md) and the [publication/deployment handoff](docs/SWAPS-ROLLOUT.md).
 
 ## Verification
 

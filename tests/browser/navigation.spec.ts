@@ -29,6 +29,7 @@ async function fixture(page: Page, authenticated = true) {
     if (path === '/config')
       return reply({ missing: [], chains: [{ id: 137, name: 'Polygon', symbol: 'POL' }] });
     if (path === '/wallets') return reply({ wallets, nextOffset: null });
+    if (path.endsWith('/swaps')) return reply({ swaps: [], nextOffset: null });
     if (path.endsWith('/operations')) return reply({ operations: [] });
     if (path.endsWith('/balances'))
       return reply({ items: [], errors: [], fetchedAt: '2026-09-17T00:00:00Z' });

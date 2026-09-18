@@ -5,7 +5,7 @@ Standalone ESM TypeScript SDK targeting WaaS v1.1.0, with OIDC authentication, e
 ## Installation
 
 ```sh
-npm install @polygonlabs/oms-server-wallet-sdk@0.1.0
+npm install @polygonlabs/oms-server-wallet-sdk@0.2.0
 ```
 
 For a step-by-step guide to integrating this package into your own Node.js / TypeScript backend, see the [OIDC, wallet creation, signing, and transaction walkthrough](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/NODE-INTEGRATION.md).
@@ -117,7 +117,7 @@ Idempotency IDs must contain 8–100 letters, digits, underscores, or hyphens. C
 
 ## Trails foundation (unreleased)
 
-The optional `@polygonlabs/oms-server-wallet-sdk/trails` entry point provides direct API discovery, quotes and recovery authorization validation. This entry point and `signTypedData` are source additions after `0.1.0`; they are not included in the published `0.1.0` package. Build this workspace to try them.
+The optional `@polygonlabs/oms-server-wallet-sdk/trails` entry point provides `WalletSwaps`, `TrailsClient`, `EvmChainReader`, quote/recovery validation and persistent execution contracts. SDK **0.2.0 is prepared for publication**; the currently published `0.1.0` does not include this entry point. Until publication, install the inspected local archive. See the [standalone backend swaps guide](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/SWAPS-INTEGRATION.md) for complete orchestration and host storage/scheduling requirements.
 
 ```ts
 import {
@@ -158,10 +158,10 @@ Quote validation binds the owner/recipient, chains, assets, budget, slippage, ex
 
 `validateRecoveryPayload(prepared, intent, owner, balances)` decodes Sequence v3 calls, binds the recorded intent address/chain, restricts native/ERC-20 transfers and TrailsUtils sweeps to the owner and reviewed assets, and checks the EIP-712 hash. Supply fresh, host-observed `{asset, amount}` balances **on that intent chain**, never balances supplied by a browser. The returned `typedData` can be passed to `wallet.signTypedData`; that generic primitive validates the domain and encoding, while the caller remains responsible for the authorization's meaning. Do not expose arbitrary typed-data signing as a dashboard endpoint.
 
-Execution coordination, recovery transaction validation/submission, owner deployment for ERC-1271 recovery, and the dashboard remain separate implementation steps. Wallet-aware verification by WaaS does not establish that Trails accepts an undeployed wallet's EIP-6492 signature. See the [swap contract and release gates](https://github.com/0xsequence-demos/waas-server-wallets/blob/docs/trails-swap-spec/docs/SWAPS.md).
+`WalletSwaps` implements durable activation, sponsored funding, settlement, delayed-deposit repair and separately confirmed source/destination recovery. Route ordinary transfers through the same coordinator; persist encrypted private records and durable wake-ups before external mutations. Recovery includes sponsored owner deployment when needed, verified typed-data signing and validation of the returned intent execution/deployment envelope. Its live sponsorship/signature acceptance remains a release gate: [rollout and acceptance](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/SWAPS-ROLLOUT.md).
 
 For explicit live discovery checks, set the ignored local `TRAILS_API_KEY` and run `pnpm test:trails`. Setting `TRAILS_TEST_WALLET` additionally requests Polygon USDC → Base USDC and Polygon POL → USDC quotes without funding or executing them. Ordinary tests use synthetic fixtures and make no network calls.
 
-Version `0.1.0` is the initial release; the API is not yet declared stable. Pin the version and review changes before upgrading. Licensed under [Apache-2.0](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/packages/server-wallet-sdk/LICENSE-APACHE-2.0); see [NOTICE](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/packages/server-wallet-sdk/NOTICE) for verifier provenance. Both files are included in the npm package.
+Version `0.2.0` adds swap/recovery capabilities; the API is not yet declared stable. Pin the version and review changes before upgrading. Licensed under [Apache-2.0](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/packages/server-wallet-sdk/LICENSE-APACHE-2.0); see [NOTICE](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/packages/server-wallet-sdk/NOTICE) for verifier provenance. Both files are included in the npm package.
 
 For local SDK development in the repository, run `pnpm --filter @polygonlabs/oms-server-wallet-sdk build`. Packaging runs the build automatically through `prepack`.

@@ -3,18 +3,18 @@
 import { buildSwapRequest } from '../../packages/server-wallet-sdk/src/trails/quote.js';
 import { validateTypedData } from '../../packages/server-wallet-sdk/src/typed-data.js';
 
-export const owner = `0x${'11'.repeat(20)}`;
-export const originIntent = `0x${'22'.repeat(20)}`;
-export const destinationIntent = `0x${'33'.repeat(20)}`;
-export const token = `0x${'44'.repeat(20)}`;
-export const destinationToken = `0x${'55'.repeat(20)}`;
-export const zero = `0x${'00'.repeat(20)}`;
+export const owner = `0x${'11'.repeat(20)}` as `0x${string}`;
+export const originIntent = `0x${'22'.repeat(20)}` as `0x${string}`;
+export const destinationIntent = `0x${'33'.repeat(20)}` as `0x${string}`;
+export const token = `0x${'44'.repeat(20)}` as `0x${string}`;
+export const destinationToken = `0x${'55'.repeat(20)}` as `0x${string}`;
+export const zero = `0x${'00'.repeat(20)}` as `0x${string}`;
 export const intentId = `0x${'ab'.repeat(32)}`;
 export const now = Date.parse('2026-09-17T12:00:00Z');
 export const contracts = {
-  trailsIntentEntrypointAddress: '',
-  trailsRouterAddress: '',
-  trailsRouterShimAddress: '',
+  trailsIntentEntrypointAddress: '' as const,
+  trailsRouterAddress: '' as const,
+  trailsRouterShimAddress: '' as const,
   trailsUtilsAddress: `0x${'66'.repeat(20)}` as `0x${string}`,
 };
 export const word = (value: string | bigint) =>

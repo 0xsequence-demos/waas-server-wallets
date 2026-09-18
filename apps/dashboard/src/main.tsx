@@ -1,10 +1,16 @@
 import React, { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { Balance, Balances, Operation, WalletSnapshot } from '@polygonlabs/oms-server-wallet-sdk';
+import type {
+  Balance,
+  Balances,
+  Operation,
+  WalletSnapshot,
+} from '@polygonlabs/oms-server-wallet-sdk';
 import { api } from './api';
 import { formatAmount, toUnits } from './amount';
 import { balanceValue, formatUsd, walletBalances } from './balances';
-import { Link, navigate, readRoute, usePathname, walletPath } from './navigation';
+import { Link, navigate, readRoute, usePathname, walletPath, swapPath } from './navigation';
+import { SwapPage, SwapActivity } from './swaps';
 import './style.css';
 
 interface Chain {
@@ -287,6 +293,17 @@ function Dashboard({ logout }: { logout: () => void }) {
               <h1>Loading wallet…</h1>
               <ErrorBox message={error} />
             </section>
+          )
+        ) : route.kind === 'swap' ? (
+          config ? (
+            <SwapPage
+              key={`${route.id}:${route.swapId ?? 'new'}`}
+              walletId={route.id}
+              swapId={route.swapId}
+              chains={config.chains}
+            />
+          ) : (
+            <p>Loading swap…</p>
           )
         ) : route.kind === 'not-found' ? (
           <section className="page-title">
@@ -656,6 +673,13 @@ function WalletDetail({ id, config }: { id: string; config: Configuration }) {
           <button
             className="secondary"
             disabled={!address || wallet?.snapshot?.disabled || busy}
+            onClick={() => navigate(swapPath(id))}
+          >
+            ⇄ Swap assets
+          </button>
+          <button
+            className="secondary"
+            disabled={!address || wallet?.snapshot?.disabled || busy}
             onClick={() => setDialog('sign')}
           >
             Sign message
@@ -774,6 +798,7 @@ function WalletDetail({ id, config }: { id: string; config: Configuration }) {
           <div className="notice">Some assets could not be loaded. Refresh to retry.</div>
         )}
       </section>
+      <SwapActivity walletId={id} chains={config.chains} />
       <section className="panel activity">
         <div className="panel-toolbar">
           <div>

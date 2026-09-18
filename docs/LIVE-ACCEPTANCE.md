@@ -35,6 +35,8 @@ Regression validation: 46 Node/API tests, 5 Workers runtime tests, and 2 fixture
 
 ## Repeat the checks
 
+The SDK 0.2.0 swap implementation was prepared on 2026-09-18. Its automated/runtime checks and read-only Trails/RPC checks are recorded separately in [SWAPS-VALIDATION.md](SWAPS-VALIDATION.md). No funded swap, recovery or new deployment was performed in that preparation; the acceptance matrix remains [pending](SWAPS-ROLLOUT.md#funded-acceptance-record-pending).
+
 The scripts read `.env` without printing secrets. They use dedicated acceptance identities, produce real signatures, and rotate/revoke test credentials. The default API script never sends funds.
 
 ```sh

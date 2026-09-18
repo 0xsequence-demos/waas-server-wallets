@@ -22,9 +22,20 @@ export function navigate(href: string) {
 export function walletPath(id: string): string {
   return `/wallets/${encodeURIComponent(id)}`;
 }
-export type Route = { kind: 'list' } | { kind: 'wallet'; id: string } | { kind: 'not-found' };
+export function swapPath(id: string, swapId?: string): string {
+  return `${walletPath(id)}/${swapId ? `swaps/${encodeURIComponent(swapId)}` : 'swap'}`;
+}
+export type Route =
+  | { kind: 'list' }
+  | { kind: 'wallet'; id: string }
+  | { kind: 'swap'; id: string; swapId?: string }
+  | { kind: 'not-found' };
 export function readRoute(pathname: string): Route {
   if (pathname === '/') return { kind: 'list' };
+  const swap = /^\/wallets\/([A-Za-z0-9_-]{1,100})\/(swap|swaps\/([A-Za-z0-9_-]{8,100}))\/?$/.exec(
+    pathname,
+  );
+  if (swap) return { kind: 'swap', id: swap[1], swapId: swap[3] };
   const match = /^\/wallets\/([A-Za-z0-9_-]{1,100})\/?$/.exec(pathname);
   return match ? { kind: 'wallet', id: match[1] } : { kind: 'not-found' };
 }

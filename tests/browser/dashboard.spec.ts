@@ -133,6 +133,7 @@ test('admin creates a wallet, reviews a sponsored transfer, and signs a message'
       ops.unshift(op);
       return reply({ operation: op, snapshot });
     }
+    if (path.endsWith('/swaps')) return reply({ swaps: [], nextOffset: null });
     if (path.endsWith('/operations')) return reply({ operations: ops });
     return route.fulfill({ status: 404, json: { message: 'Unknown fixture route' } });
   });

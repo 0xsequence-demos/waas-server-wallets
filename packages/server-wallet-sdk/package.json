@@ -1,7 +1,7 @@
 {
   "name": "@polygonlabs/oms-server-wallet-sdk",
-  "version": "0.1.0",
-  "description": "Standalone TypeScript SDK for OMS server wallets, OIDC authentication, attested signing, and sponsored transfers.",
+  "version": "0.2.0",
+  "description": "Standalone TypeScript SDK for attested OMS server wallets, sponsored transfers, and durable Trails swaps and recovery.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -33,7 +33,8 @@
   "files": [
     "dist",
     "NOTICE",
-    "LICENSE-APACHE-2.0"
+    "LICENSE-APACHE-2.0",
+    "CHANGELOG.md"
   ],
   "exports": {
     "./trails": {

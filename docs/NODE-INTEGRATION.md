@@ -1,6 +1,6 @@
 # Node.js / TypeScript wallet integration walkthrough
 
-This guide shows how to use `@polygonlabs/oms-server-wallet-sdk` from npm in your own backend: configure OpenID Connect (OIDC), create or restore a wallet, sign a message, and send a sponsored native-token or ERC-20 transfer. It targets SDK `0.1.0` and its WaaS v1.1.0 protocol. You can use it without cloning this repository, running the dashboard, or using Cloudflare.
+This guide shows how to use `@polygonlabs/oms-server-wallet-sdk` from npm in your own backend: configure OpenID Connect (OIDC), create or restore a wallet, sign a message, and send a sponsored native-token or ERC-20 transfer. These core operations remain compatible with SDK `0.1.0` and the prepared `0.2.0` release on WaaS v1.1.0. For the new swap module, use [the 0.2.0 backend swaps guide](SWAPS-INTEGRATION.md). You can use it without cloning this repository, running the dashboard, or using Cloudflare.
 
 **Your backend supplies a trusted identity; the SDK authenticates a credential for that identity; WaaS performs wallet signing.** You provide OpenID information in two places: register your issuer and audience with OMS once, then provide a fresh signed ID token through the SDK's `tokenProvider` whenever authentication is needed.
 

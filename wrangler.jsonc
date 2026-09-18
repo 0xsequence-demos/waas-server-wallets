@@ -29,6 +29,9 @@
     "APP_ORIGIN": "https://oms-server-wallet-dashboard.0xsequence.workers.dev",
     "TRUSTED_PCR0S": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
     "OIDC_ADDITIONAL_PUBLIC_JWKS": "",
+    "TRAILS_API_URL": "https://trails-api.sequence.app",
+    "TRAILS_PROJECT_ID": "oms-dashboard",
+    "SWAPS_ENABLED": "false",
   },
   "observability": { "enabled": true, "traces": { "enabled": true, "head_sampling_rate": 0.1 } },
 }

@@ -21,6 +21,7 @@ jobs:
       - run: pnpm test:coverage
       - run: pnpm test:workers
       - run: pnpm cf:check
+      - run: pnpm test:package
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:browser
       - uses: actions/upload-artifact@v4
@@ -30,3 +31,8 @@ jobs:
           path: |
             coverage/
             test-results/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdk-release-candidate
+          path: .data/sdk-release/
+          include-hidden-files: true

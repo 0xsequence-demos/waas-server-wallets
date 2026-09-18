@@ -2,6 +2,8 @@
 
 The application deploys as one Worker with static assets, D1, and one SQLite Durable Object per wallet. Cloudflare hosts the backend-only OIDC issuer at the same hostname. No separate Node service is required in deployment. The local Node server remains available for NixOS development.
 
+For the prepared SDK 0.2.0 and Trails swap upgrade, use [the swap rollout handoff](SWAPS-ROLLOUT.md) and [validation report](SWAPS-VALIDATION.md). This preparation has not changed the hosted Worker, remote secrets or D1 schema. The version identifiers below are historical deployment records, not a fresh query of Cloudflare.
+
 ## Current deployment
 
 - Account: **Sequence Demos**, `b6c780e2a453a8593576535e3e81a7cd`.

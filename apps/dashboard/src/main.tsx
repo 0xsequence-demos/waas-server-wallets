@@ -414,21 +414,12 @@ function Dashboard({ logout }: { logout: () => void }) {
                       <th>Wallet</th>
                       <th>Address</th>
                       <th>Balance (USD)</th>
-                      <th>Credential</th>
                       <th>Created</th>
                     </tr>
                   </thead>
                   <tbody>
                     {wallets.map((wallet) => {
                       const result = balances[wallet.id];
-                      const state = wallet.snapshot?.disabled
-                        ? 'disabled'
-                        : wallet.snapshot?.expiresAt &&
-                            Date.parse(wallet.snapshot.expiresAt) <= Date.now()
-                          ? 'expired'
-                          : wallet.snapshot?.wallet
-                            ? 'active'
-                            : 'pending';
                       return (
                         <tr
                           key={wallet.id}
@@ -459,9 +450,6 @@ function Dashboard({ logout }: { logout: () => void }) {
                           <td className="mono">{short(wallet.snapshot?.wallet?.address)}</td>
                           <td>
                             <WalletValue balances={wallet.snapshot?.wallet ? result : null} />
-                          </td>
-                          <td>
-                            <Status value={state} />
                           </td>
                           <td className="subtle">
                             {new Date(wallet.createdAt).toLocaleDateString()}
@@ -703,9 +691,14 @@ function WalletDetail({ id, config }: { id: string; config: Configuration }) {
           <Status value={wallet?.snapshot?.disabled ? 'disabled' : 'managed'} />
           <span>Automatic credential renewal</span>
           <small>
-            {wallet?.snapshot?.expiresAt
-              ? `Current expiry: ${new Date(wallet.snapshot.expiresAt).toLocaleString()}`
-              : 'No active credential'}
+            {wallet?.snapshot?.disabled
+              ? 'Renewal paused while disabled'
+              : wallet?.snapshot?.expiresAt &&
+                  Date.parse(wallet.snapshot.expiresAt) > Date.now()
+                ? `Current expiry: ${new Date(wallet.snapshot.expiresAt).toLocaleString()}`
+                : address
+                  ? 'Renews on next use'
+                  : 'No active credential'}
           </small>
         </div>
         <div className="actions">

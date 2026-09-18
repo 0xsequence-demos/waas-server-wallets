@@ -2,6 +2,8 @@
 
 Prepared on 2026-09-18. SDK **0.2.0** and the complete dashboard integration are ready for review. This work does not publish npm, deploy a Worker, upload secrets or submit a funded live transaction. PRs target `master` directly; there is no dependency on an old feature branch.
 
+Deployment update: PRs #6 and #7 are merged, the Trails secret and swap migration are installed, and the operator requested enabling the demo on 2026-09-18. `wrangler.jsonc` now sets `SWAPS_ENABLED=true` for this deployed demo. Local configuration still defaults to paused. Enablement does not establish funded acceptance or publish the SDK; the acceptance matrix below remains pending.
+
 ## Reviewable changes
 
 - Standalone `/trails` workflow: durable quote/confirmation, activation before funding, sponsored native/ERC-20 funding, settlement and late-deposit repair.
@@ -37,13 +39,13 @@ pnpm deploy
 
 ## Configuration
 
-| Setting             | Behavior                                                                                                                                                  |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TRAILS_API_KEY`    | Backend secret, separate from OMS. Never sent to the browser.                                                                                             |
-| `TRAILS_API_URL`    | Defaults to `https://trails-api.sequence.app`; HTTPS origin only.                                                                                         |
-| `TRAILS_PROJECT_ID` | Stable project label (`oms-dashboard` by default). Change only after draining/reconciling old work; retain the value on key rotation in the same project. |
-| `SWAPS_ENABLED`     | Default `false`; blocks new quotes, confirmation, activation and funding. Tracking and separately confirmed recovery remain available.                    |
-| `EVM_RPC_URLS`      | Optional JSON map of chain ID to backend HTTPS RPC URL. Use a secret if URLs contain provider credentials.                                                |
+| Setting             | Behavior                                                                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TRAILS_API_KEY`    | Backend secret, separate from OMS. Never sent to the browser.                                                                                                                                                                         |
+| `TRAILS_API_URL`    | Defaults to `https://trails-api.sequence.app`; HTTPS origin only.                                                                                                                                                                     |
+| `TRAILS_PROJECT_ID` | Stable project label (`oms-dashboard` by default). Change only after draining/reconciling old work; retain the value on key rotation in the same project.                                                                             |
+| `SWAPS_ENABLED`     | Application default `false`; this demo's Wrangler config sets `true` for operator testing. Setting `false` pauses new quotes, confirmation, activation and funding while tracking and separately confirmed recovery remain available. |
+| `EVM_RPC_URLS`      | Optional JSON map of chain ID to backend HTTPS RPC URL. Use a secret if URLs contain provider credentials.                                                                                                                            |
 
 Default RPCs are PublicNode Ethereum/Polygon, official Arbitrum One/Base mainnet endpoints, and BNB's public endpoint. Their batch `eth_chainId` + code reads passed on all five chains on 2026-09-18. Replace them with dedicated endpoints if public rate limits impede processing. All 14 curated native/USDC/USDT contracts and decimals matched live Trails discovery on that date; BNB's 18-decimal assets are explicitly labeled Binance-Peg.
 

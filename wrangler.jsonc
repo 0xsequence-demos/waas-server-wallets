@@ -31,7 +31,7 @@
     "OIDC_ADDITIONAL_PUBLIC_JWKS": "",
     "TRAILS_API_URL": "https://trails-api.sequence.app",
     "TRAILS_PROJECT_ID": "oms-dashboard",
-    "SWAPS_ENABLED": "false",
+    "SWAPS_ENABLED": "true",
   },
   "observability": { "enabled": true, "traces": { "enabled": true, "head_sampling_rate": 0.1 } },
 }

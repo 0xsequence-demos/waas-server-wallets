@@ -30,6 +30,7 @@ export default defineConfig({
           OMS_PUBLISHABLE_KEY: 'pk_dev_live_test_key',
           TRUSTED_PCR0S: '0'.repeat(96),
           APP_ORIGIN: 'https://issuer.example',
+          SWAPS_ENABLED: 'false',
         },
       },
     }),

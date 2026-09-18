@@ -97,6 +97,10 @@ test('wallet links can open in a new tab', async ({ page, context }) => {
     context.waitForEvent('page'),
     link.click({ button: 'middle' }),
   ]);
+  // Middle-click opens a background tab. Activate it and await its document,
+  // rather than starting the UI assertion as soon as its URL is assigned.
+  await opened.bringToFront();
+  await opened.waitForURL(/\/wallets\/wallet-one$/, { waitUntil: 'domcontentloaded' });
   await expect(opened).toHaveURL(/\/wallets\/wallet-one$/);
   await expect(opened.getByRole('heading', { name: 'Wallet one' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your wallet workspace' })).toBeVisible();

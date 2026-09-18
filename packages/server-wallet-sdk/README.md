@@ -115,9 +115,9 @@ Idempotency IDs must contain 8–100 letters, digits, underscores, or hyphens. C
 
 `IndexerClient.getBalances(address, page?)` returns base-unit strings, metadata, a fetch timestamp, per-chain errors, and `nextPage`. Keep errors separate from zero balances and follow pagination. Unknown token decimals stay unknown.
 
-## Trails foundation (unreleased)
+## Trails swaps and recovery
 
-The optional `@polygonlabs/oms-server-wallet-sdk/trails` entry point provides `WalletSwaps`, `TrailsClient`, `EvmChainReader`, quote/recovery validation and persistent execution contracts. SDK **0.2.0 is prepared for publication**; the currently published `0.1.0` does not include this entry point. Until publication, install the inspected local archive. See the [standalone backend swaps guide](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/SWAPS-INTEGRATION.md) for complete orchestration and host storage/scheduling requirements.
+The optional `@polygonlabs/oms-server-wallet-sdk/trails` entry point, added in **0.2.0**, provides `WalletSwaps`, `TrailsClient`, `EvmChainReader`, quote/recovery validation and persistent execution contracts. See the [standalone backend swaps guide](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/SWAPS-INTEGRATION.md) for complete orchestration and host storage/scheduling requirements.
 
 ```ts
 import {
@@ -149,16 +149,17 @@ const request = buildSwapRequest(
 const { intent } = await trails.quoteIntent(request);
 const reviewed = await validateSwapQuote(intent, request, TrailsContracts);
 // Persist and review the snapshot/digest before any funding workflow.
-// This foundation does not activate, fund, retry or settle a swap.
+// This quote-only example does not activate or fund the swap.
+// Use WalletSwaps for durable execution, reconciliation and recovery.
 ```
 
-`TrailsClient` supports `readiness`, `getChains`, `getTokenList`, `getExactInputRoutes`, `quoteIntent`, `getIntent` and `prepareIntentRecovery`. Calls are bounded, reject redirects and unsafe integer JSON, support caller cancellation, and never automatically retry. `TrailsError` contains the method, HTTP status and numeric upstream code without upstream bodies or keys. There is no `CommitIntent` call. Readiness requires the **wire value `v1.5`**; `v1_5` is only an upstream enum identifier.
+`TrailsClient` supports `readiness`, `getChains`, `getTokenList`, `getExactInputRoutes`, `quoteIntent`, `executeIntent`, `getIntent` and `prepareIntentRecovery`. Calls are bounded, reject redirects and unsafe integer JSON, support caller cancellation, and never automatically retry. `TrailsError` contains the method, HTTP status and numeric upstream code without upstream bodies or keys. There is no `CommitIntent` call. Readiness requires the **wire value `v1.5`**; `v1_5` is only an upstream enum identifier.
 
 Quote validation binds the owner/recipient, chains, assets, budget, slippage, expiry, contracts and deposit precondition. It reconstructs native/ERC-20 funding calldata locally and returns an independent snapshot plus a base64url SHA-256 digest. Keep the snapshot and digest in authoritative storage; the digest is not an authentication token. The host must review any changed quote and require WaaS sponsorship when it eventually prepares the funding transfer.
 
 `validateRecoveryPayload(prepared, intent, owner, balances)` decodes Sequence v3 calls, binds the recorded intent address/chain, restricts native/ERC-20 transfers and TrailsUtils sweeps to the owner and reviewed assets, and checks the EIP-712 hash. Supply fresh, host-observed `{asset, amount}` balances **on that intent chain**, never balances supplied by a browser. The returned `typedData` can be passed to `wallet.signTypedData`; that generic primitive validates the domain and encoding, while the caller remains responsible for the authorization's meaning. Do not expose arbitrary typed-data signing as a dashboard endpoint.
 
-`WalletSwaps` implements durable activation, sponsored funding, settlement, delayed-deposit repair and separately confirmed source/destination recovery. Route ordinary transfers through the same coordinator; persist encrypted private records and durable wake-ups before external mutations. Recovery includes sponsored owner deployment when needed, verified typed-data signing and validation of the returned intent execution/deployment envelope. Its live sponsorship/signature acceptance remains a release gate: [rollout and acceptance](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/SWAPS-ROLLOUT.md).
+`WalletSwaps` implements durable activation, sponsored funding, settlement, delayed-deposit repair and separately confirmed source/destination recovery. Route ordinary transfers through the same coordinator; persist encrypted private records and durable wake-ups before external mutations. Recovery includes sponsored owner deployment when needed, verified typed-data signing and validation of the returned intent execution/deployment envelope. See [rollout and acceptance](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/SWAPS-ROLLOUT.md) for the live scenarios verified so far and recovery checks still pending.
 
 For explicit live discovery checks, set the ignored local `TRAILS_API_KEY` and run `pnpm test:trails`. Setting `TRAILS_TEST_WALLET` additionally requests Polygon USDC → Base USDC and Polygon POL → USDC quotes without funding or executing them. Ordinary tests use synthetic fixtures and make no network calls.
 

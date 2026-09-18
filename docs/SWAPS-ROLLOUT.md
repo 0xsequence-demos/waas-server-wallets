@@ -1,8 +1,8 @@
 # Swap release and deployment handoff
 
-Prepared on 2026-09-18. SDK **0.2.0** and the complete dashboard integration are ready for review. This work does not publish npm, deploy a Worker, upload secrets or submit a funded live transaction. PRs target `master` directly; there is no dependency on an old feature branch.
+Updated on 2026-09-18. SDK **0.2.0** is published on npm as `latest`, and its registry archive and independent consumer checks passed. See the [publication record](SWAPS-VALIDATION.md#published-sdk-020). PRs target `master` directly.
 
-Deployment update: PRs #6 and #7 are merged, the Trails secret and swap migration are installed, and the operator requested enabling the demo on 2026-09-18. `wrangler.jsonc` now sets `SWAPS_ENABLED=true` for this deployed demo. Local configuration still defaults to paused. Enablement does not establish funded acceptance or publish the SDK; the acceptance matrix below remains pending.
+Deployment update: PRs #6, #7 and #8 are merged, the Trails secret and swap migration are installed, and the demo is deployed with `SWAPS_ENABLED=true`. The operator reports successful swaps. Local configuration still defaults to paused. Detailed scenario-specific evidence, including recovery acceptance, remains pending in the matrix below.
 
 ## Reviewable changes
 
@@ -11,17 +11,13 @@ Deployment update: PRs #6 and #7 are merged, the Trails secret and swap migratio
 - Encrypted per-wallet journal, shared debit coordination, persistent Node runner, Workers alarms, versioned catalog projection outbox and additive migrations.
 - Dashboard swap/recovery reviews, progress, explorer links, paginated activity, precise amounts and history/deep links. Indexed USD portfolio totals exclude estimated swap proceeds.
 
-## Next session: publish, deploy, accept
+## Remaining acceptance and future deployments
 
-1. Review and merge the implementation PR directly into `master`. Check the recorded CI result against that commit.
-2. With the package owner present, publish the inspected **0.2.0** archive following [SDK-RELEASE.md](SDK-RELEASE.md). Verify the registry integrity and install the published package into a clean consumer. No publication automation is installed.
-3. Apply the additive catalog migration to the existing Cloudflare D1 database. Node installs ordered migrations automatically on startup. Durable Objects add their journal table automatically and preserve the existing `state` table.
-4. Stage the separate `TRAILS_API_KEY` secret. Preserve existing secrets, account `b6c780e2a453a8593576535e3e81a7cd`, issuer/audience and debug PCR0 configuration. The local `.env` value is already present; do not paste it into a command argument, source file or PR. Wrangler secret commands can create/deploy versions; perform them during the explicitly authorized deployment session, not during release preparation.
-5. Deploy the built Worker with `SWAPS_ENABLED=false`. Check authentication, existing wallets/transfers/signing, `/api/swaps/config` and journal/projection behavior. The origin remains `https://oms-server-wallet-dashboard.0xsequence.workers.dev` for OMS/Trails requests.
-6. Enable swaps only for the controlled acceptance window with the shared administrator, use the agreed funded wallet and exact spend cap, and run the scenarios below. Keep broad use paused until recovery compatibility passes. Record each intent/operation/hash and result.
-7. Enable the demo after acceptance and verify the published SDK independently with the same service configuration. Leave background reconciliation running when pausing new swaps.
+1. Record intent IDs, operation IDs, transaction hashes and results for the scenarios below using an agreed funded wallet and spend cap. The operator's successful swap report does not establish every recovery or restart scenario.
+2. Verify the published SDK's live execution/recovery workflow in a separate backend with the same service configuration. Its registry installation, imports, types and offline codec/storage checks already pass.
+3. For future deployments, check the merged commit's CI, preserve the catalog/journal and existing secrets, and apply only outstanding additive migrations. Keep account `b6c780e2a453a8593576535e3e81a7cd`, issuer/audience, debug PCR0 and origin `https://oms-server-wallet-dashboard.0xsequence.workers.dev` consistent. Never paste secret values into source or PRs. Leave background reconciliation running when pausing new swaps.
 
-Commands for the **next deployment session**, after approval and review:
+Deployment reference for future changes; the npm release does not require redeploying the current demo:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -55,6 +51,8 @@ Read-only checks used no funding, signatures, activation or recovery authorizati
 
 Agree the wallet identity, per-scenario exact input and cumulative maximum before execution. Do not create another swap as a retry for an uncertain deposit. Reuse its existing ID and status/reconcile route.
 
+The operator reports working swaps, but no route-specific hashes or recovery results are recorded here yet. Pending rows refer to this evidence, not to an unimplemented feature.
+
 | Scenario                                             | Required proof                                                                                                              | Result  |
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------- |
 | Same-chain native → token                            | Sponsored funding, single deposit, actual output ≥ reviewed minimum                                                         | Pending |
@@ -65,7 +63,7 @@ Agree the wallet identity, per-scenario exact input and cumulative maximum befor
 | Destination recovery with initially undeployed owner | Sponsored owner self-call, confirmed code, accepted signature, validated intent deployment if needed, actual returned funds | Pending |
 | Disconnect/restart                                   | Browser closure and Worker eviction do not stop settlement or duplicate funding                                             | Pending |
 | Feature pause / wallet disable                       | Existing funded work is observed; no unauthorized new debit or reauth while disabled                                        | Pending |
-| Published SDK consumer                               | ESM import/types and the same quote/execution/recovery workflow outside this repo                                           | Pending |
+| Published SDK consumer                               | ESM import/types and the same quote/execution/recovery workflow outside this repo                                           | Registry imports/types and offline checks passed; live workflow evidence pending |
 
 Use a controlled recoverable intent or upstream-supported test scenario for recovery. Do not manufacture a failure with unrelated mainnet calls. If WaaS cannot sponsor the owner deployment or Trails rejects the verified deployed-wallet signature, retain exact sanitized evidence and keep execution paused; do not truncate signatures or fall back to unsponsored calls.
 

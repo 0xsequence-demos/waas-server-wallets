@@ -1,6 +1,6 @@
 # Backend swaps with SDK 0.2.0
 
-`@polygonlabs/oms-server-wallet-sdk/trails` adds exact-input swaps and bridges, durable sponsored funding, settlement tracking, and separately authorized recovery. The prepared release is **0.2.0**; it has not been published yet. Until publication, install the inspected local archive described in [SDK release](SDK-RELEASE.md). After publication, pin `@polygonlabs/oms-server-wallet-sdk@0.2.0`.
+`@polygonlabs/oms-server-wallet-sdk/trails` adds exact-input swaps and bridges, durable sponsored funding, settlement tracking, and separately authorized recovery. These capabilities are available in **0.2.0**. Install and pin `@polygonlabs/oms-server-wallet-sdk@0.2.0` from npm; see [SDK release](SDK-RELEASE.md) for publication and verification details.
 
 First create a `ServerWallet` using the [Node integration guide](NODE-INTEGRATION.md). Keep its credential executor, encrypted state store, OIDC provider, audience, origin and attestation policy. The swap module has no dependency on this dashboard, Cloudflare, Hono, D1 or React.
 

@@ -34,7 +34,7 @@ Live wallet actions require an OMS publishable key, trusted enclave measurements
 
 On Cloudflare, one Worker serves assets, API, discovery, and JWKS. D1 stores the catalog, sessions, audit events, and operation summaries. A SQLite Durable Object per wallet owns encrypted credentials, nonces, and authoritative operation state and serializes calls. Node uses the same SDK and API with SQLite and per-wallet in-process executors. Do not run multiple Node processes against the same local database.
 
-SDK **0.2.0 is prepared for publication**, with the complete swap module. Until the owner publishes it, use the inspected local archive from [the release guide](docs/SDK-RELEASE.md); npm still serves 0.1.0. After publication, install:
+SDK **0.2.0** includes the standalone swap module. Install it in your backend:
 
 ```sh
 npm install @polygonlabs/oms-server-wallet-sdk@0.2.0
@@ -42,7 +42,7 @@ npm install @polygonlabs/oms-server-wallet-sdk@0.2.0
 
 Follow the [Node.js / TypeScript integration walkthrough](docs/NODE-INTEGRATION.md), covering OIDC registration, credentials, wallet creation, signing, and transaction sending. The dashboard uses the same package through a workspace dependency for local development. See also the [detailed specification](docs/SPEC.md), [SDK API and integration contract](packages/server-wallet-sdk/README.md), and [SDK release procedure](docs/SDK-RELEASE.md).
 
-Swaps and bridges are implemented at `/wallets/<id>/swap`, with persistent activity at `/wallets/<id>/swaps/<swap>`. They use a separate backend Trails key, curated assets and fresh chain reads. Node runs a persistent SQLite scheduler; Workers use per-wallet alarms. The deployed demo enables swaps for operator testing; local configuration defaults to paused. Funded acceptance remains pending. See [backend SDK swaps](docs/SWAPS-INTEGRATION.md) and the [publication/deployment handoff](docs/SWAPS-ROLLOUT.md).
+Swaps and bridges are implemented at `/wallets/<id>/swap`, with persistent activity at `/wallets/<id>/swaps/<swap>`. They use a separate backend Trails key, curated assets and fresh chain reads. Node runs a persistent SQLite scheduler; Workers use per-wallet alarms. The deployed demo has swaps enabled, and the operator reports successful swaps. Local configuration defaults to paused. Detailed funded acceptance and recovery evidence remain pending. See [backend SDK swaps](docs/SWAPS-INTEGRATION.md) and the [publication/deployment handoff](docs/SWAPS-ROLLOUT.md).
 
 ## Verification
 
@@ -68,7 +68,7 @@ The Node and browser suites do not require workerd. The separate Workers suite d
 
 A Polygon self-transfer quote was verified as sponsored. **Funded transfer execution remains untested.** See [live acceptance results and repeatable commands](docs/LIVE-ACCEPTANCE.md).
 
-Swap implementation checks and the exact prepared SDK archive are recorded in [swap validation](docs/SWAPS-VALIDATION.md). Publication, deployment and funded swap/recovery acceptance remain separate next-session steps.
+SDK publication and registry-consumer verification are recorded in [swap validation](docs/SWAPS-VALIDATION.md). The demo is deployed with swaps enabled; the remaining live recovery scenarios are tracked in [swap acceptance](docs/SWAPS-ROLLOUT.md#funded-acceptance-record-pending).
 
 ## Prototype boundaries
 

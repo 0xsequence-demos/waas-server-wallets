@@ -1,6 +1,6 @@
 # Node.js / TypeScript wallet integration walkthrough
 
-This guide shows how to use `@polygonlabs/oms-server-wallet-sdk` from npm in your own backend: configure OpenID Connect (OIDC), create or restore a wallet, sign a message, and send a sponsored native-token or ERC-20 transfer. These core operations remain compatible with SDK `0.1.0` and the prepared `0.2.0` release on WaaS v1.1.0. For the new swap module, use [the 0.2.0 backend swaps guide](SWAPS-INTEGRATION.md). You can use it without cloning this repository, running the dashboard, or using Cloudflare.
+This guide shows how to use `@polygonlabs/oms-server-wallet-sdk` from npm in your own backend: configure OpenID Connect (OIDC), create or restore a wallet, sign a message, and send a sponsored native-token or ERC-20 transfer. These core operations remain compatible with SDK `0.1.0` and `0.2.0` on WaaS v1.1.0. For the new swap module, use [the 0.2.0 backend swaps guide](SWAPS-INTEGRATION.md). You can use it without cloning this repository, running the dashboard, or using Cloudflare.
 
 **Your backend supplies a trusted identity; the SDK authenticates a credential for that identity; WaaS performs wallet signing.** You provide OpenID information in two places: register your issuer and audience with OMS once, then provide a fresh signed ID token through the SDK's `tokenProvider` whenever authentication is needed.
 
@@ -70,17 +70,17 @@ If you already have an identity provider, confirm its issuer, audience, token-si
 Use Node **24+** and install the SDK directly from npm in your backend:
 
 ```sh
-npm install @polygonlabs/oms-server-wallet-sdk@0.1.0
+npm install @polygonlabs/oms-server-wallet-sdk@0.2.0
 ```
 
-Version `0.1.0` is the initial release; its API is not yet declared stable. The examples pin this version. For a new example application, run the following commands in a directory of your choice:
+The examples pin version `0.2.0`, which adds swaps and recovery while preserving the core wallet API. The API is not yet declared stable. For a new example application, run the following commands in a directory of your choice:
 
 ```sh
 mkdir oms-node-example
 cd oms-node-example
 npm init -y
 npm pkg set type=module
-npm install @polygonlabs/oms-server-wallet-sdk@0.1.0 jose@6.2.10
+npm install @polygonlabs/oms-server-wallet-sdk@0.2.0 jose@6.2.10
 npm install --save-dev typescript@5.9.3 tsx@4.23.13 @types/node@24
 mkdir src
 ```

@@ -29,6 +29,7 @@ async function fixture(page: Page, authenticated = true) {
     if (path === '/config')
       return reply({ missing: [], chains: [{ id: 137, name: 'Polygon', symbol: 'POL' }] });
     if (path === '/wallets') return reply({ wallets, nextOffset: null });
+    if (path.endsWith('/swaps')) return reply({ swaps: [], nextOffset: null });
     if (path.endsWith('/operations')) return reply({ operations: [] });
     if (path.endsWith('/balances'))
       return reply({ items: [], errors: [], fetchedAt: '2026-09-17T00:00:00Z' });
@@ -96,6 +97,10 @@ test('wallet links can open in a new tab', async ({ page, context }) => {
     context.waitForEvent('page'),
     link.click({ button: 'middle' }),
   ]);
+  // Middle-click opens a background tab. Activate it and await its document,
+  // rather than starting the UI assertion as soon as its URL is assigned.
+  await opened.bringToFront();
+  await opened.waitForURL(/\/wallets\/wallet-one$/, { waitUntil: 'domcontentloaded' });
   await expect(opened).toHaveURL(/\/wallets\/wallet-one$/);
   await expect(opened.getByRole('heading', { name: 'Wallet one' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your wallet workspace' })).toBeVisible();

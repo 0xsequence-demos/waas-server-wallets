@@ -874,3 +874,154 @@ dialog .notice {
     flex-wrap: wrap;
   }
 }
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.swap-form,
+.swap-review,
+.swap-progress,
+.swap-recovery {
+  padding: 28px;
+  margin-bottom: 24px;
+}
+.swap-form {
+  max-width: 820px;
+}
+.swap-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.swap-fields h2 {
+  margin-top: 0;
+}
+.swap-route {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 24px;
+  margin-bottom: 20px;
+}
+.swap-route small,
+.swap-route strong {
+  display: block;
+}
+.swap-route small {
+  color: var(--muted, #6a7280);
+  margin-bottom: 8px;
+}
+.swap-route strong {
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+.swap-facts {
+  display: grid;
+  gap: 14px;
+}
+.swap-facts > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+}
+.swap-facts dt {
+  color: var(--muted, #6a7280);
+}
+.swap-facts dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+  max-width: 70%;
+}
+.swap-steps {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  gap: 10px;
+}
+.swap-steps li {
+  flex: 1;
+  border-top: 3px solid #393643;
+  padding-top: 12px;
+  color: #778092;
+  font-size: 13px;
+}
+.swap-steps li.reached {
+  border-color: #6455d8;
+  color: var(--purple);
+}
+.transaction-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.recovery-review {
+  border-top: 1px solid var(--line);
+  padding: 20px 0;
+}
+.recovery-review small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.swap-activity-row {
+  text-decoration: none;
+  color: inherit;
+}
+.swap-activity-row:hover {
+  background: #252030;
+}
+.status.succeeded,
+.status.refunded {
+  background: #e5f5ef;
+  color: #167153;
+}
+.status.attention,
+.status.expired,
+.status.failed {
+  background: #fff2db;
+  color: #996013;
+}
+.status.funding,
+.status.settling,
+.status.activating,
+.status.recovering {
+  background: #ede9ff;
+  color: #6250ba;
+}
+@media (max-width: 680px) {
+  .swap-fields {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .swap-form,
+  .swap-review,
+  .swap-progress,
+  .swap-recovery {
+    padding: 18px;
+  }
+  .swap-facts > div {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .swap-facts dd {
+    text-align: left;
+    max-width: 100%;
+  }
+  .swap-route {
+    gap: 18px;
+  }
+}
+
+.transaction-links a {
+  color: var(--purple);
+}
+.swap-form .notice {
+  margin-bottom: 20px;
+}

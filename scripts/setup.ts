@@ -17,6 +17,11 @@ const lines = [
   'TRUSTED_PCR0S=',
   'APP_ORIGIN=http://127.0.0.1:5187',
   'DATABASE_PATH=.data/dashboard.sqlite',
+  'TRAILS_API_KEY=',
+  'TRAILS_API_URL=https://trails-api.sequence.app',
+  'TRAILS_PROJECT_ID=oms-dashboard',
+  'SWAPS_ENABLED=false',
+  'EVM_RPC_URLS={}',
   '',
 ];
 await mkdir('.data', { recursive: true });

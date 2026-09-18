@@ -1,7 +1,6 @@
 import { Payload } from '@0xsequence/wallet-primitives';
 import {
   bytesToHex,
-  hexToBytes,
   decodeFunctionData,
   encodeFunctionData,
   erc20Abi,
@@ -13,6 +12,7 @@ import { validateTypedData } from '../typed-data.js';
 import { canonicalJson } from '../json.js';
 import { addressSchema, recoverySchema, uintSchema, type TrailsIntent } from './protocol.js';
 import { tokenAddress } from './quote.js';
+import { decodeCalls } from './codec.js';
 
 export const sweepAbi = parseAbi([
   'function sweep(address sweepTarget, address[] tokensToSweep, bool sweepNative)',
@@ -51,7 +51,7 @@ export function validateRecoveryPayload(
       prepared.payload.intentAddress !== target
     )
       throw new Error('Recovery target mismatch');
-    const payload = Payload.decode(hexToBytes(prepared.payload.encoded as `0x${string}`), target);
+    const payload = decodeCalls(prepared.payload.encoded, target);
     if (
       payload.calls.length < 1 ||
       payload.calls.length > 64 ||
@@ -59,25 +59,6 @@ export function validateRecoveryPayload(
       payload.nonce !== 0n
     )
       throw new Error('Unsupported recovery payload');
-    // Go omits empty calldata; wallet-primitives 3.0.11 emits an explicit zero
-    // length for '0x'. Accept both equivalent encodings, but no trailing bytes.
-    const withoutEmptyData = {
-      ...payload,
-      calls: payload.calls.map((call) => ({
-        ...call,
-        data: call.data === '0x' ? ('' as `0x${string}`) : call.data,
-      })),
-    };
-    // Go encodes nonce=0 in zero bytes; the TS codec uses one zero byte. Space
-    // is nonzero here, so that byte follows the flag and the 20-byte space.
-    const tsEncoded = Payload.encode(withoutEmptyData);
-    const goEncoded = new Uint8Array(tsEncoded.length - 1);
-    goEncoded.set(tsEncoded.subarray(0, 21));
-    goEncoded[0] &= ~0x0e;
-    goEncoded.set(tsEncoded.subarray(22), 21);
-    const encoded = prepared.payload.encoded.toLowerCase();
-    if (bytesToHex(Payload.encode(payload)) !== encoded && bytesToHex(goEncoded) !== encoded)
-      throw new Error('Noncanonical recovery');
     for (const call of payload.calls) {
       if (
         call.delegateCall ||

@@ -18,6 +18,7 @@ import {
 import type { ExclusiveExecutor, StateStore } from './storage.js';
 import type { RpcTransport } from './transport.js';
 import { validateTypedData } from './typed-data.js';
+import { requireRecoveryPermit, type RecoveryTransaction } from './authorization.js';
 
 export interface WalletSnapshot {
   wallet?: RemoteWallet;
@@ -40,7 +41,7 @@ export interface Transfer {
 }
 export interface Operation {
   id: string;
-  kind: 'transfer' | 'sign' | 'signTypedData';
+  kind: 'transfer' | 'sign' | 'signTypedData' | 'deployment' | 'recovery';
   inputHash: string;
   createdAt: string;
   status:
@@ -54,6 +55,7 @@ export interface Operation {
     | 'signed';
   chainId: number;
   transfer?: Transfer;
+  transaction?: { to: string; data: string; value: string };
   quote?: Quote;
   signature?: string;
   verified?: boolean;
@@ -338,8 +340,23 @@ export class ServerWallet {
     const value = await this.options.store.read(`operation:${id}`);
     return value ? (JSON.parse(value) as Operation) : null;
   }
-  private writeOperation(op: Operation) {
-    return this.options.store.write(`operation:${op.id}`, JSON.stringify(op));
+  private async writeOperation(op: Operation) {
+    const ids: string[] = JSON.parse((await this.options.store.read('operationIndex')) ?? '[]');
+    if (!ids.includes(op.id))
+      await this.options.store.write('operationIndex', JSON.stringify([...ids, op.id]));
+    await this.options.store.write(`operation:${op.id}`, JSON.stringify(op));
+  }
+  /** Includes imported legacy IDs. Reads persisted status without authenticating or polling. */
+  listOperations(legacyIds: readonly string[] = []): Promise<Operation[]> {
+    return this.options.executor.run(async () => {
+      const ids: string[] = JSON.parse((await this.options.store.read('operationIndex')) ?? '[]');
+      const operations: Operation[] = [];
+      for (const id of new Set([...ids, ...legacyIds])) {
+        const op = await this.readOperation(id);
+        if (op) operations.push(op);
+      }
+      return operations;
+    });
   }
   private async existing(
     id: string,
@@ -439,10 +456,17 @@ export class ServerWallet {
     });
   }
   executeTransfer(id: string): Promise<Operation> {
+    return this.executePrepared(id, ['transfer']);
+  }
+  /** Executes only a previously prepared, persisted and sponsored operation. */
+  executeOperation(id: string): Promise<Operation> {
+    return this.executePrepared(id, ['transfer', 'deployment', 'recovery']);
+  }
+  private executePrepared(id: string, kinds: Operation['kind'][]): Promise<Operation> {
     return this.options.executor.run(async () => {
       const op = await this.readOperation(id);
-      if (!op || op.kind !== 'transfer')
-        throw new WalletError('NOT_FOUND', 'Transfer not found.', 404);
+      if (!op || !kinds.includes(op.kind))
+        throw new WalletError('NOT_FOUND', 'Prepared transaction not found.', 404);
       if (op.status !== 'quoted') return this.refresh(op);
       if (!op.quote?.sponsored)
         throw new WalletError('SPONSORSHIP_REQUIRED', 'Transfer requires gas sponsorship.', 409);
@@ -468,7 +492,7 @@ export class ServerWallet {
   }
   private async refresh(op: Operation): Promise<Operation> {
     if (
-      op.kind !== 'transfer' ||
+      !['transfer', 'deployment', 'recovery'].includes(op.kind) ||
       !op.quote ||
       !['submitting', 'pending', 'unknown'].includes(op.status)
     )
@@ -487,6 +511,67 @@ export class ServerWallet {
     return this.options.executor.run(async () => {
       const op = await this.readOperation(id);
       return op ? this.refresh(op) : null;
+    });
+  }
+  /** Narrow self-call used only to deploy this wallet on a recovery chain. */
+  prepareDeployment(id: string, chainId: number): Promise<Operation> {
+    return this.prepareInternal(id, chainId, 'deployment');
+  }
+  prepareRecoveryTransaction(id: string, transaction: RecoveryTransaction): Promise<Operation> {
+    requireRecoveryPermit(transaction);
+    return this.prepareInternal(id, transaction.chainId, 'recovery', transaction);
+  }
+  private prepareInternal(
+    id: string,
+    chainId: number,
+    kind: 'deployment' | 'recovery',
+    transaction?: RecoveryTransaction,
+  ): Promise<Operation> {
+    return this.options.executor.run(async () => {
+      requireChain(chainId);
+      const state = await this.load();
+      await this.ensure(state);
+      if (transaction && transaction.owner !== state.wallet!.address.toLowerCase())
+        throw new WalletError('INVALID_RECOVERY', 'Recovery belongs to a different wallet.');
+      const call = transaction
+        ? { to: transaction.to, data: transaction.data, value: transaction.value }
+        : { to: state.wallet!.address, data: '0x', value: '0' };
+      const { operation, hash } = await this.existing(id, kind, { chainId, ...call });
+      if (operation) return operation;
+      const op: Operation = {
+        id,
+        kind,
+        chainId,
+        transaction: call,
+        inputHash: hash,
+        status: 'preparing',
+        createdAt: new Date().toISOString(),
+      };
+      await this.writeOperation(op);
+      try {
+        op.quote = quoteSchema.parse(
+          await this.activeCall(state, 'PrepareEthereumTransaction', {
+            network: String(chainId),
+            walletId: state.wallet!.id,
+            ...call,
+            mode: 'relayer',
+          }),
+        );
+        if (!op.quote.sponsored)
+          throw new WalletError(
+            'SPONSORSHIP_REQUIRED',
+            'Recovery and deployment require gas sponsorship.',
+            409,
+          );
+        op.status = 'quoted';
+        await this.writeOperation(op);
+        return op;
+      } catch (error) {
+        op.status = 'failed';
+        op.error = error instanceof WalletError ? error.code : 'PREPARATION_FAILED';
+        await this.writeOperation(op);
+        throw error;
+      }
     });
   }
   signMessage(id: string, chainId: number, message: string): Promise<Operation> {

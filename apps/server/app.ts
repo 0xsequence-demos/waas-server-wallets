@@ -3,13 +3,19 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { z } from 'zod';
-import { CHAINS, IndexerClient, WalletError, type WalletSnapshot } from '@polygonlabs/oms-server-wallet-sdk';
+import {
+  CHAINS,
+  IndexerClient,
+  WalletError,
+  type WalletSnapshot,
+} from '@polygonlabs/oms-server-wallet-sdk';
 import { readiness, type Config } from './config.js';
 import { Repository, type WalletRow } from './database.js';
 import { AdminAuth } from './auth.js';
 import { OidcIssuer } from './issuer.js';
 import { omsFetch } from './oms-fetch.js';
 import type { Command, CommandResult } from './service.js';
+import { swapConfiguration } from './swaps-config.js';
 
 export interface Runtime {
   config: Config;
@@ -18,7 +24,22 @@ export interface Runtime {
   clientIp?: (request: Request) => string;
 }
 const cookie = 'oms_admin';
-const idSchema = z.string().regex(/^[A-Za-z0-9_-]{8,100}$/);
+const idSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]{8,100}$/)
+  .refine((id) => !id.startsWith('swp_'));
+const revisionSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+const swapBody = z
+  .object({
+    id: idSchema,
+    originChainId: z.number().int(),
+    originAsset: z.string().max(42),
+    destinationChainId: z.number().int(),
+    destinationAsset: z.string().max(42),
+    amount: z.string().regex(/^[1-9][0-9]{0,77}$/),
+    slippageBps: z.union([z.literal(10), z.literal(50), z.literal(100)]).optional(),
+  })
+  .strict();
 const operationBody = z
   .object({ id: idSchema, chainId: z.number().int(), message: z.string().min(1).max(16_384) })
   .strict();
@@ -117,7 +138,7 @@ export function createApp(runtime: Runtime) {
         command: command.kind,
         ...result.diagnostic,
       });
-    if (!['inspect', 'operation'].includes(command.kind))
+    if (!['inspect', 'operation', 'swap-get', 'swap-list', 'swap-tick'].includes(command.kind))
       await repo.audit(row.id, command.kind, result.ok ? 'success' : result.code);
     if (!result.ok) throw new WalletError(result.code, result.message, result.status);
     await repo.snapshot(row.id, result.value.snapshot);
@@ -229,6 +250,94 @@ export function createApp(runtime: Runtime) {
           : { id: op.id, kind: op.kind, status: 'unknown', createdAt: op.created_at },
       ),
     });
+  });
+  app.get('/api/swaps/config', async (c) => c.json(await swapConfiguration(config)));
+  app.post('/api/wallets/:id/swaps', async (c) => {
+    const row = await wallet(c.req.param('id'));
+    const { id, ...request } = swapBody.parse(await c.req.json());
+    if (!(await repo.quoteAllowed(row.id)))
+      throw new WalletError(
+        'QUOTE_RATE_LIMIT',
+        'Too many quote requests. Try again in a minute.',
+        429,
+      );
+    return c.json(await dispatch(row, { kind: 'swap-quote', id, request }));
+  });
+  app.get('/api/wallets/:id/swaps', async (c) => {
+    const offset = z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(100000)
+      .parse(c.req.query('offset') ?? '0');
+    const result = await dispatch(await wallet(c.req.param('id')), { kind: 'swap-list', offset });
+    return c.json({
+      swaps: result.swaps ?? [],
+      nextOffset: result.swaps?.length === 50 ? offset + 50 : null,
+    });
+  });
+  app.get('/api/wallets/:id/swaps/:swap', async (c) =>
+    c.json(
+      await dispatch(await wallet(c.req.param('id')), {
+        kind: 'swap-get',
+        id: idSchema.parse(c.req.param('swap')),
+      }),
+    ),
+  );
+  app.post('/api/wallets/:id/swaps/:swap/confirm', async (c) => {
+    const { revision } = z
+      .object({ revision: revisionSchema })
+      .strict()
+      .parse(await c.req.json());
+    return c.json(
+      await dispatch(await wallet(c.req.param('id')), {
+        kind: 'swap-confirm',
+        id: idSchema.parse(c.req.param('swap')),
+        revision,
+      }),
+      202,
+    );
+  });
+  app.post('/api/wallets/:id/swaps/:swap/reconcile', async (c) => {
+    z.object({})
+      .strict()
+      .parse(await c.req.json());
+    return c.json(
+      await dispatch(await wallet(c.req.param('id')), {
+        kind: 'swap-reconcile',
+        id: idSchema.parse(c.req.param('swap')),
+      }),
+      202,
+    );
+  });
+  app.post('/api/wallets/:id/swaps/:swap/recoveries', async (c) => {
+    const { id: recoveryId, source } = z
+      .object({ id: idSchema, source: z.enum(['origin', 'destination']) })
+      .strict()
+      .parse(await c.req.json());
+    return c.json(
+      await dispatch(await wallet(c.req.param('id')), {
+        kind: 'recovery-quote',
+        id: idSchema.parse(c.req.param('swap')),
+        recoveryId,
+        source,
+      }),
+    );
+  });
+  app.post('/api/wallets/:id/swaps/:swap/recoveries/:recovery/confirm', async (c) => {
+    const { revision } = z
+      .object({ revision: revisionSchema })
+      .strict()
+      .parse(await c.req.json());
+    return c.json(
+      await dispatch(await wallet(c.req.param('id')), {
+        kind: 'recovery-confirm',
+        id: idSchema.parse(c.req.param('swap')),
+        recoveryId: idSchema.parse(c.req.param('recovery')),
+        revision,
+      }),
+      202,
+    );
   });
   app.onError((error, c) => {
     if (error instanceof z.ZodError || error instanceof SyntaxError)

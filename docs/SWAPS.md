@@ -1,6 +1,6 @@
 # Trails swaps — implementation specification
 
-Status: finalized implementation plan, 2026-09-17. Implementation and live acceptance are pending. This extends [the prototype specification](SPEC.md); existing wallet, OIDC, sponsorship, attestation, and Node development requirements continue to apply.
+Status: implemented for the prepared 0.2.0 release on 2026-09-18; funded live acceptance, npm publication and deployment are pending. See [the release handoff](SWAPS-ROLLOUT.md). This extends [the prototype specification](SPEC.md); existing wallet, OIDC, sponsorship, attestation, and Node development requirements continue to apply.
 
 ## 1. Product contract
 
@@ -177,7 +177,7 @@ Disabling a wallet blocks new funding, signing, activation and recovery authoriz
 Recovery is a required release path, including source and destination intent addresses and intermediate assets. A failed swap can return a different token or return funds on the destination chain; show actual asset, amount and chain rather than promising restoration of the original input.
 
 1. Reconcile current upstream state and inspect recoverable balances for both recorded intent addresses. Offer recovery only when there is a positive balance and no active local recovery. Do not expose an unconditional cancel button or race an ordinary progressing route automatically. Manual recovery of a stalled route requires an explicit review and a fresh status check.
-2. Call `PrepareIntentRecovery` with the recorded intent ID/address and managed wallet as `refundToAddress`. Retain the returned canonical envelope unchanged.
+2. Call `PrepareIntentRecovery` with the recorded intent ID/address and managed wallet as `refundToAddress`. Retain the returned canonical envelope unchanged for audit. For the recognized non-delegate utility sweep described below, derive a separately stored direct-refund authorization from fresh reviewed balances before confirmation/signing.
 3. Decode the envelope and cross-check typed data and `payloadHash`. Require Sequence Wallet v3 `Calls`, the matching chain and intent verifying contract, and calls that only sweep/transfer intent-owned assets to the managed wallet. Validate sweep utility against the stored, supported Trails contract context. Reject unexpected delegates, approvals, destinations, or unrelated calls; bound payload and array sizes.
 4. Check whether the OMS owner is deployed on this recovery chain. If not, prepare a narrowly scoped, sponsored zero-value self-call through WaaS to deploy it, show that step in the recovery review, execute it idempotently, wait for success and confirm code exists. This uses WaaS deploy-and-call behavior, but the exact sponsored self-call must pass live acceptance. Do not change public positive-amount transfer validation to expose arbitrary zero-value calls.
 5. Recheck balance/state after deployment. If reviewed assets or authorization materially change, prepare a new review. Use WaaS `SignTypedData` and `IsValidTypedDataSignature` for the validated payload. Pass the deployed-wallet signature intact; do not truncate it or unwrap EIP-6492 by guesswork.
@@ -251,14 +251,14 @@ Live compatibility findings for PR 1:
 
 PR 1 live checks on 2026-09-17 passed discovery for all five chains (405 listed tokens), a 10 USDC Polygon → Base quote, and a 100 POL → USDC Polygon quote. Dev WaaS signed and verified inert typed-data probes on Polygon and Base; both used EIP-6492 wrappers. Test credentials were revoked afterward. No intent was activated or funded, and no recovery authorization was signed.
 
-`GetExactInputRoutes` returned an empty destination list for Polygon native USDC with the configured key, although `QuoteIntent` accepted that source for the Base route. Resolve that discovery discrepancy before implementing dashboard route filtering; do not treat the empty list as proof that the quote route is unsupported.
+`GetExactInputRoutes` returned an empty destination list although `QuoteIntent` accepted the route. Source review resolved this: both exact-input and exact-output discovery handlers are TODO stubs in `rpc/routes.go` at the pinned API revision. The dashboard intersects its curated registry with chain/token discovery; a validated quote establishes route availability.
 
 1. **SDK contract and compatibility:** typed Trails transport, v1.5 discovery/quote validation, lossless codec, recovery codec and WaaS typed-signing primitives. Establish source fixtures and verify deployment/signature compatibility with the configured services before enabling execution.
 2. **Persistent execution:** state machine, sponsored funding, idempotency/outbox, debit coordination, alarm/Node runners, migrations, status/history routes and crash/retry tests.
 3. **Recovery:** reviewed recovery endpoints, owner deployment where required, payload validation, sponsored recovery execution and reconciliation. Include source/destination and signature tests.
 4. **Dashboard and release:** swap/recovery routes and forms, progress/activity, browser tests, configuration/operations documentation and recorded live acceptance.
 
-Keep the feature disabled through partial merges. Completion requires all four PRs, passing automated checks, no CommitIntent calls, a working recovery path for the enabled routes, restart-safe tracking, and recorded funded acceptance. API keys and test funding are deployment inputs, not unresolved product scope.
+The remaining execution, recovery and dashboard work is delivered together in one implementation PR directly against `master`, following the merged foundation. Automated checks, no CommitIntent calls, restart-safe tracking and recovery are implemented; recorded funded acceptance remains the deployment gate. API keys and test funding are deployment inputs, not unresolved product scope.
 
 ## Source references
 
@@ -280,3 +280,9 @@ Keep the feature disabled through partial merges. Completion requires all four P
 [waas-sign]: https://github.com/0xsequence/waas/blob/v1.1.0/wallet/ethscw/sign.go
 [waas-relayer]: https://github.com/0xsequence/waas/blob/v1.1.0/wallet/ethscw/send_relayer.go
 [cf-alarms]: https://developers.cloudflare.com/durable-objects/api/alarms/
+
+## Recovery compatibility correction (2026-09-18)
+
+Source review found that the API constructs an external, non-delegate call to `TrailsUtils.sweep`, while the contract sweeps `address(this)`. That call does not sweep funds held by the calling intent wallet. See [the API builder][api-recovery] and [Sweepable at contract revision 21751c2](https://github.com/0xsequence/trails-contracts/blob/21751c2e6200079fa2d4fb27d0a0aaf7be61dc4d/src/modules/Sweepable.sol).
+
+The workflow preserves the original API envelope, validates its full context, then converts only a single recognized utility sweep into exact native/ERC-20 refunds from the intent to the managed owner. It preserves the fresh nonce space, recomputes the canonical payload/typed data/hash, stores the derived authorization separately and binds it into the explicit recovery review. Direct API refund envelopes remain unchanged. Unknown delegates, recipients and mixed utility envelopes fail closed. The API builder accepts and hashes the supplied signed payload; it does not require the original utility call. This is a documented correction to the original unchanged-envelope execution plan, not a generic contract-call interface. Regression tests verify both the byte/hash transformation and the complete workflow. Live acceptance of the derived authorization is still required.

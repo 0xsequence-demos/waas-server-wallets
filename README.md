@@ -1,6 +1,6 @@
 # OMS server wallet dashboard
 
-A TypeScript prototype for operating OMS wallets from a shared administrator dashboard. Targets WaaS **v1.1.0** with backend OIDC identities, automatic credential renewal, attested responses, native/ERC-20 transfers with mandatory gas sponsorship, and verified plain-message signing.
+A TypeScript prototype for operating OMS wallets from a shared administrator dashboard. Targets WaaS **v1.1.0** with backend OIDC identities, automatic credential renewal, attested responses, native/ERC-20 transfers with mandatory gas sponsorship, verified plain-message signing, and durable Trails swaps with reviewed recovery.
 
 Supports Polygon, Arbitrum, Base, BNB Chain, and Ethereum Mainnet. One immutable application identifier maps to one EVM wallet across these networks. The application controls authorization; wallet signing keys remain in WaaS.
 
@@ -34,15 +34,15 @@ Live wallet actions require an OMS publishable key, trusted enclave measurements
 
 On Cloudflare, one Worker serves assets, API, discovery, and JWKS. D1 stores the catalog, sessions, audit events, and operation summaries. A SQLite Durable Object per wallet owns encrypted credentials, nonces, and authoritative operation state and serializes calls. Node uses the same SDK and API with SQLite and per-wallet in-process executors. Do not run multiple Node processes against the same local database.
 
-For your own backend, install the standalone SDK from npm:
+SDK **0.2.0 is prepared for publication**, with the complete swap module. Until the owner publishes it, use the inspected local archive from [the release guide](docs/SDK-RELEASE.md); npm still serves 0.1.0. After publication, install:
 
 ```sh
-npm install @polygonlabs/oms-server-wallet-sdk@0.1.0
+npm install @polygonlabs/oms-server-wallet-sdk@0.2.0
 ```
 
 Follow the [Node.js / TypeScript integration walkthrough](docs/NODE-INTEGRATION.md), covering OIDC registration, credentials, wallet creation, signing, and transaction sending. The dashboard uses the same package through a workspace dependency for local development. See also the [detailed specification](docs/SPEC.md), [SDK API and integration contract](packages/server-wallet-sdk/README.md), and [SDK release procedure](docs/SDK-RELEASE.md).
 
-The next feature is specified in the [Trails swap implementation plan](docs/SWAPS.md), covering sponsored funding, cross-chain settlement, recovery, and the implementation PR sequence. Swaps are not implemented yet.
+Swaps and bridges are implemented at `/wallets/<id>/swap`, with persistent activity at `/wallets/<id>/swaps/<swap>`. They use a separate backend Trails key, curated assets and fresh chain reads. Node runs a persistent SQLite scheduler; Workers use per-wallet alarms. New execution defaults to paused while funded acceptance is pending. See [backend SDK swaps](docs/SWAPS-INTEGRATION.md) and the [publication/deployment handoff](docs/SWAPS-ROLLOUT.md).
 
 ## Verification
 
@@ -51,6 +51,7 @@ pnpm check              # typecheck, lint, Node tests, SDK/UI production builds
 pnpm test:coverage      # coverage report and enforced minimums
 pnpm test:workers       # actual Workers crypto, Durable Object, and D1 tests
 pnpm cf:check           # bundle validation only; does not deploy
+pnpm test:package       # pack + isolated SDK consumer validation; does not publish
 pnpm test:browser       # isolated Vite server on 5187; stop pnpm dev first
 pnpm test:live          # explicit live dev acceptance; creates a dedicated wallet, sends no transactions
 ```
@@ -67,11 +68,13 @@ The Node and browser suites do not require workerd. The separate Workers suite d
 
 A Polygon self-transfer quote was verified as sponsored. **Funded transfer execution remains untested.** See [live acceptance results and repeatable commands](docs/LIVE-ACCEPTANCE.md).
 
+Swap implementation checks and the exact prepared SDK archive are recorded in [swap validation](docs/SWAPS-VALIDATION.md). Publication, deployment and funded swap/recovery acceptance remain separate next-session steps.
+
 ## Prototype boundaries
 
 - Shared password and server-side eight-hour admin sessions; no individual users or roles.
-- Plain messages and native/ERC-20 transfers only. Token choices come from indexed assets with known decimals.
-- Activity shows the latest 50 operations initiated here, not full on-chain history.
+- Plain messages, native/ERC-20 transfers, and exact-input swaps/bridges between curated assets. No arbitrary contract-call endpoint.
+- Activity shows the latest 50 ordinary operations and paginated swap/recovery history, not full on-chain history.
 - Disable persists locally before attempting self-revocation. If revocation fails, the wallet stays disabled and re-enable retries revocation.
 - Uncertain submissions are reconciled by transaction ID; they are never automatically submitted again. An uncertain wallet creation with no discoverable result stays blocked pending upstream reconciliation.
 - Encryption-key replacement requires a data migration; there is no automatic encryption-key rotation or disaster-recovery UI.

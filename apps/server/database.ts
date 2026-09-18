@@ -1,4 +1,5 @@
 import type { WalletSnapshot, Operation, StateStore } from '@polygonlabs/oms-server-wallet-sdk';
+import type { SwapView } from '@polygonlabs/oms-server-wallet-sdk/trails';
 
 export interface SqlDatabase {
   all<T extends Record<string, unknown>>(
@@ -80,6 +81,32 @@ export class Repository {
       'SELECT * FROM operations WHERE wallet_id = ? ORDER BY created_at DESC LIMIT 50',
       [walletId],
     );
+  }
+  async operationIds(walletId: string) {
+    return (
+      await this.db.all<{ id: string }>('SELECT id FROM operations WHERE wallet_id = ?', [walletId])
+    ).map((r) => r.id);
+  }
+  async projectSwap(walletId: string, value: SwapView) {
+    await this.db.run(
+      `INSERT INTO swap_summaries(wallet_id,id,version,phase,updated_at,summary) VALUES(?,?,?,?,?,?)
+      ON CONFLICT(wallet_id,id) DO UPDATE SET version=excluded.version,phase=excluded.phase,updated_at=excluded.updated_at,summary=excluded.summary
+      WHERE excluded.version > swap_summaries.version`,
+      [walletId, value.id, value.version, value.phase, value.updatedAt, JSON.stringify(value)],
+    );
+  }
+  async quoteAllowed(walletId: string, now = Date.now()) {
+    await this.db.run(
+      `INSERT INTO swap_quote_limits VALUES(?,1,?) ON CONFLICT(wallet_id) DO UPDATE SET
+      count=CASE WHEN expires_at<=? THEN 1 ELSE count+1 END,
+      expires_at=CASE WHEN expires_at<=? THEN excluded.expires_at ELSE expires_at END`,
+      [walletId, now + 60_000, now, now],
+    );
+    const [row] = await this.db.all<{ count: number }>(
+      'SELECT count FROM swap_quote_limits WHERE wallet_id = ?',
+      [walletId],
+    );
+    return row.count <= 12;
   }
   async audit(walletId: string | null, action: string, outcome: string) {
     await this.db.run('INSERT INTO audit_events VALUES(?, ?, ?, ?, ?)', [

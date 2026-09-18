@@ -11,6 +11,10 @@ import {
   intentSchema,
   tokenSchema,
   recoverySchema,
+  receiptSchema,
+  statusSchema,
+  builtRecoverySchema,
+  type PreparedRecovery,
 } from './protocol.js';
 
 export interface TrailsClientOptions {
@@ -191,6 +195,56 @@ export class TrailsClient {
       'GetIntent',
       { intentId: hashSchema.parse(intentId) },
       z.object({ intent: intentSchema }),
+      signal,
+    );
+  }
+  executeIntent(intentId: string, signal?: AbortSignal) {
+    return this.call(
+      'ExecuteIntent',
+      { intentId: hashSchema.parse(intentId) },
+      z.object({ intentId: hashSchema, intentStatus: statusSchema }),
+      signal,
+    );
+  }
+  getIntentReceipt(intentId: string, signal?: AbortSignal) {
+    return this.call(
+      'GetIntentReceipt',
+      { intentId: hashSchema.parse(intentId) },
+      z.object({ intentReceipt: receiptSchema }),
+      signal,
+    );
+  }
+  retryIntent(intentId: string, depositTransactionHash: string, signal?: AbortSignal) {
+    return this.call(
+      'RetryIntent',
+      {
+        intentId: hashSchema.parse(intentId),
+        depositTransactionHash: hashSchema.parse(depositTransactionHash),
+      },
+      z.object({ intentId: hashSchema, intentStatus: statusSchema }),
+      signal,
+    );
+  }
+  buildIntentRecoveryTransaction(
+    prepared: PreparedRecovery,
+    signature: string,
+    refundToAddress: string,
+    signal?: AbortSignal,
+  ) {
+    return this.call(
+      'BuildIntentRecoveryTransaction',
+      {
+        intentId: hashSchema.parse(prepared.intentId),
+        intentAddress: addressSchema.parse(prepared.intentAddress),
+        payload: prepared.payload,
+        signature: z
+          .string()
+          .regex(/^0x(?:[0-9a-fA-F]{2})+$/)
+          .max(131_074)
+          .parse(signature),
+        refundToAddress: addressSchema.parse(refundToAddress),
+      },
+      builtRecoverySchema,
       signal,
     );
   }

@@ -130,7 +130,8 @@ describe('Sequence recovery authorization', () => {
       expect(() => validateRecoveryPayload(prepared, intent, owner, balances)).toThrow();
     for (const field of ['name', 'version', 'verifyingContract'] as const) {
       const prepared = structuredClone(fixture);
-      prepared.typedData.domain[field] = field === 'verifyingContract' ? owner : 'wrong';
+      (prepared.typedData.domain as Record<string, unknown>)[field] =
+        field === 'verifyingContract' ? owner : 'wrong';
       prepared.payloadHash = validateTypedData(prepared.typedData, 137).digest;
       expect(() => validateRecoveryPayload(prepared, intent, owner, balances)).toThrow();
     }

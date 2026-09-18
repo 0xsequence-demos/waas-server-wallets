@@ -136,3 +136,74 @@ export type TrailsIntent = z.infer<typeof intentSchema>;
 export type TrailsToken = z.infer<typeof tokenSchema>;
 export type TrailsContracts = z.infer<typeof contractsSchema>;
 export type PreparedRecovery = z.infer<typeof recoverySchema>;
+
+export const transactionStatusSchema = z.enum([
+  'UNKNOWN',
+  'ON_HOLD',
+  'PENDING',
+  'RELAYING',
+  'SENT',
+  'ERRORED',
+  'MINING',
+  'SUCCEEDED',
+  'FAILED',
+  'ABORTED',
+  'REVERTED',
+]);
+export const intentTransactionSchema = z
+  .object({
+    intentId: hashSchema,
+    status: transactionStatusSchema,
+    chainId: chainSchema,
+    type: z.enum(['UNKNOWN', 'DEPOSIT', 'ORIGIN', 'DESTINATION', 'ROUTE', 'REFUND']),
+    fromAddress: addressSchema,
+    toAddress: addressSchema,
+    tokenAddress: addressSchema,
+    tokenAmount: uintSchema,
+    txnHash: z.union([hashSchema, z.literal('')]).nullish(),
+  })
+  .passthrough();
+export const receiptSchema = z
+  .object({
+    intentId: hashSchema,
+    status: statusSchema,
+    ownerAddress: addressSchema,
+    originChainId: chainSchema,
+    destinationChainId: chainSchema,
+    depositTransaction: intentTransactionSchema.nullish(),
+    originTransaction: intentTransactionSchema.nullish(),
+    destinationTransaction: intentTransactionSchema.nullish(),
+    refundTransaction: intentTransactionSchema.nullish(),
+    summary: z
+      .object({
+        originIntentAddress: addressSchema,
+        destinationIntentAddress: addressSchema,
+        destinationToAddress: z.union([addressSchema, z.literal('')]).nullish(),
+        destinationTokenAddress: z.union([addressSchema, z.literal('')]).nullish(),
+        destinationTokenAmount: uintSchema.nullish(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+export type TrailsReceipt = z.infer<typeof receiptSchema>;
+export const recoveryTokenSchema = z
+  .object({
+    contractAddress: addressSchema,
+    balance: uintSchema,
+    chainId: z.number().int().nonnegative().safe(),
+    decimals: z.number().int().min(0).max(255),
+    symbol: z.string().max(128),
+  })
+  .passthrough();
+export const builtRecoverySchema = z
+  .object({
+    to: addressSchema,
+    data: hexSchema,
+    value: z.literal('0'),
+    chainId: chainSchema,
+    intentAddress: addressSchema,
+    requiresDeploy: z.boolean(),
+    payloadHash: hashSchema,
+  })
+  .passthrough();
+export type BuiltRecovery = z.infer<typeof builtRecoverySchema>;

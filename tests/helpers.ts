@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { readFileSync } from 'node:fs';
+import { migrate } from '../apps/server/migrate.js';
 import {
   ServerWallet,
   SerialExecutor,
@@ -130,7 +130,7 @@ export function sdkHarness() {
 }
 export function testDatabase() {
   const sqlite = new DatabaseSync(':memory:');
-  sqlite.exec(readFileSync(new URL('../migrations/0001_initial.sql', import.meta.url), 'utf8'));
+  migrate(sqlite);
   const db: SqlDatabase = {
     async all<T extends Record<string, unknown>>(
       sql: string,

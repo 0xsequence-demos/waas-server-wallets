@@ -24,6 +24,7 @@ export interface SwapAsset {
   chainId: number;
   asset: string;
   decimals: number;
+  symbol?: string;
 }
 export interface SwapRequest {
   originChainId: number;

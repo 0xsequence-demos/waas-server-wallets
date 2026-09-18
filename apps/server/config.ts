@@ -1,5 +1,10 @@
 import { environmentFromKey } from '@polygonlabs/oms-server-wallet-sdk';
 export interface Config {
+  TRAILS_API_KEY?: string;
+  TRAILS_API_URL?: string;
+  TRAILS_PROJECT_ID?: string;
+  SWAPS_ENABLED?: string;
+  EVM_RPC_URLS?: string;
   ADMIN_PASSWORD: string;
   SESSION_SECRET: string;
   ENCRYPTION_KEY: string;
@@ -13,6 +18,11 @@ export interface Config {
 }
 export function configFrom(values: Partial<Record<keyof Config, string>>): Config {
   return {
+    TRAILS_API_KEY: values.TRAILS_API_KEY ?? '',
+    TRAILS_API_URL: values.TRAILS_API_URL ?? 'https://trails-api.sequence.app',
+    TRAILS_PROJECT_ID: values.TRAILS_PROJECT_ID ?? 'oms-dashboard',
+    SWAPS_ENABLED: values.SWAPS_ENABLED ?? 'false',
+    EVM_RPC_URLS: values.EVM_RPC_URLS ?? '{}',
     ADMIN_PASSWORD: values.ADMIN_PASSWORD ?? '',
     SESSION_SECRET: values.SESSION_SECRET ?? '',
     ENCRYPTION_KEY: values.ENCRYPTION_KEY ?? '',
@@ -27,7 +37,17 @@ export function configFrom(values: Partial<Record<keyof Config, string>>): Confi
 }
 export function readiness(config: Config) {
   const missing = Object.entries(config)
-    .filter(([key, value]) => key !== 'OIDC_ADDITIONAL_PUBLIC_JWKS' && !value)
+    .filter(
+      ([key, value]) =>
+        ![
+          'OIDC_ADDITIONAL_PUBLIC_JWKS',
+          'TRAILS_API_KEY',
+          'TRAILS_API_URL',
+          'TRAILS_PROJECT_ID',
+          'SWAPS_ENABLED',
+          'EVM_RPC_URLS',
+        ].includes(key) && !value,
+    )
     .map(([key]) => key);
   if (config.OIDC_ISSUER && !config.OIDC_ISSUER.startsWith('https://'))
     missing.push('OIDC_ISSUER must use public HTTPS for live WaaS');

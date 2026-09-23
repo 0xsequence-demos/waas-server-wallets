@@ -5,11 +5,9 @@ import {
   signatureHeader,
 } from '../packages/server-wallet-sdk/src/protocol.js';
 import { WaasTransport, boundedText } from '../packages/server-wallet-sdk/src/transport.js';
-import { IndexerClient } from '@polygonlabs/oms-server-wallet-sdk';
+import { IndexerClient, OmsAuth } from '@polygonlabs/oms-server-wallet-sdk';
 import { formatAmount, toUnits } from '../apps/dashboard/src/amount.js';
-import { omsFetch } from '../apps/server/oms-fetch.js';
-
-const requestOrigin = 'https://oms-server-wallet-dashboard.0xsequence.workers.dev';
+import { testAuth, secretCredentials } from './fixtures/oms.js';
 
 describe('WaaS request protocol', () => {
   it('derives the WaaS credential hash from the typed compressed P-256 key', async () => {
@@ -60,27 +58,35 @@ describe('WaaS request protocol', () => {
       ),
     ).toBe(false);
   });
-  it('includes the project key and signature and fails closed when attestation is missing', async () => {
+  it('includes the project JWT and signature and fails closed when attestation is missing', async () => {
     let requestHeaders: Headers | undefined;
     const fetcher: typeof fetch = async (_url, init) => {
       requestHeaders = new Headers(init?.headers);
       return Response.json({ signature: '0x1234' });
     };
-    const client = new WaasTransport(
-      'pk_dev_live_test_key',
-      ['0'.repeat(96)],
-      omsFetch(`${requestOrigin}/`, fetcher),
-    );
+    const client = new WaasTransport(testAuth(), ['0'.repeat(96)], fetcher);
     const credential = await generateCredential();
     credential.nonce = '1';
     await expect(client.request('SignMessage', {}, credential)).rejects.toMatchObject({
       code: 'ATTESTATION_FAILED',
     });
-    expect(requestHeaders?.get('Api-Key')).toBe('pk_dev_live_test_key');
-    expect(requestHeaders?.get('Origin')).toBe(requestOrigin);
-    expect(requestHeaders?.get('OMS-Wallet-Signature')).toContain('scope="prj_test"');
+    expect(requestHeaders?.get('Api-Key')).toBeNull();
+    expect(requestHeaders?.get('Authorization')).toBe('Bearer test-only-project-jwt');
+    expect(requestHeaders?.get('Origin')).toBeNull();
+    expect(requestHeaders?.get('OMS-Wallet-Signature')).toContain(
+      `scope="${secretCredentials.projectId}"`,
+    );
     expect(requestHeaders?.get('X-Attestation-Nonce')).toHaveLength(24);
-    expect(() => new WaasTransport('pk_live_test_key', ['0'.repeat(96)])).toThrow('Debug enclaves');
+    expect(
+      () =>
+        new WaasTransport(
+          new OmsAuth({
+            ...secretCredentials,
+            appId: secretCredentials.appId.replace('_dev_', '_'),
+          }),
+          ['0'.repeat(96)],
+        ),
+    ).toThrow('Debug enclaves');
   });
   it('bounds responses while streaming', async () => {
     const stream = new ReadableStream({
@@ -100,49 +106,47 @@ describe('indexer gateway', () => {
     const address = '0x1111111111111111111111111111111111111111';
     let sent: Record<string, unknown> = {};
     let requestHeaders: Headers | undefined;
-    const client = new IndexerClient(
-      'pk_dev_live_test_key',
-      omsFetch(`${requestOrigin}/`, async (_url, init) => {
-        requestHeaders = new Headers(init?.headers);
-        sent = JSON.parse(String(init?.body));
-        return Response.json({
-          nativeBalances: [
-            {
-              chainId: 137,
-              results: [
-                {
-                  chainId: 137,
-                  accountAddress: address,
-                  balanceWei: '1000000000000000001',
-                  name: 'Polygon',
-                  symbol: 'POL',
-                },
-              ],
-            },
-            { chainId: 1, errorReason: 'Indexer unavailable' },
-          ],
-          balances: [
-            {
-              chainId: 137,
-              results: [
-                {
-                  chainId: 137,
-                  accountAddress: address,
-                  contractAddress: '0x2222222222222222222222222222222222222222',
-                  contractType: 'ERC20',
-                  balance: '1234567890123456789012345',
-                  contractInfo: { name: 'USD Coin', symbol: 'USDC', decimals: 6 },
-                },
-              ],
-            },
-          ],
-          page: { page: 0, pageSize: 40, more: true },
-        });
-      }),
-    );
+    const client = new IndexerClient(testAuth(), async (_url, init) => {
+      requestHeaders = new Headers(init?.headers);
+      sent = JSON.parse(String(init?.body));
+      return Response.json({
+        nativeBalances: [
+          {
+            chainId: 137,
+            results: [
+              {
+                chainId: 137,
+                accountAddress: address,
+                balanceWei: '1000000000000000001',
+                name: 'Polygon',
+                symbol: 'POL',
+              },
+            ],
+          },
+          { chainId: 1, errorReason: 'Indexer unavailable' },
+        ],
+        balances: [
+          {
+            chainId: 137,
+            results: [
+              {
+                chainId: 137,
+                accountAddress: address,
+                contractAddress: '0x2222222222222222222222222222222222222222',
+                contractType: 'ERC20',
+                balance: '1234567890123456789012345',
+                contractInfo: { name: 'USD Coin', symbol: 'USDC', decimals: 6 },
+              },
+            ],
+          },
+        ],
+        page: { page: 0, pageSize: 40, more: true },
+      });
+    });
     const result = await client.getBalances(address);
-    expect(requestHeaders?.get('Origin')).toBe(requestOrigin);
-    expect(requestHeaders?.get('Api-Key')).toBe('pk_dev_live_test_key');
+    expect(requestHeaders?.get('Origin')).toBeNull();
+    expect(requestHeaders?.get('Api-Key')).toBeNull();
+    expect(requestHeaders?.get('Authorization')).toBe('Bearer test-only-project-jwt');
     expect(result.items[0].balance).toBe('1000000000000000001');
     expect(result.items[1].decimals).toBe(6);
     expect(result.errors.find((e) => e.chainId === 1)?.message).toBe('Indexer unavailable');
@@ -150,7 +154,7 @@ describe('indexer gateway', () => {
     expect(sent.chainIds).toEqual([137, 42161, 8453, 56, 1]);
   });
   it('rejects balances belonging to another wallet', async () => {
-    const client = new IndexerClient('pk_dev_live_test_key', async () =>
+    const client = new IndexerClient(testAuth(), async () =>
       Response.json({
         nativeBalances: [
           {

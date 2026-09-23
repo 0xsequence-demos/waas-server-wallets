@@ -12,16 +12,15 @@ export function requireChain(id: number) {
     throw new WalletError('UNSUPPORTED_CHAIN', 'Select one of the configured EVM networks.');
   return chain;
 }
-export function environmentFromKey(key: string) {
-  const match = /^pk_(?:(local|dev|stg)_)?(sdbx|live)_([A-Za-z0-9]+)_([A-Za-z0-9-]+)$/.exec(key);
-  if (!match) throw new WalletError('CONFIGURATION', 'Configure a valid OMS publishable key.', 503);
-  const [, stage, mode, project] = match;
+export function environmentFromAppId(appId: string) {
+  const match = /^sk_(?:(local|dev|stg)_)?(sdbx|live)_([0-7][0-9a-hjkmnp-tv-z]{25})$/.exec(appId);
+  if (!match) throw new WalletError('CONFIGURATION', 'Configure a valid OMS secret App ID.', 503);
+  const [, stage, mode] = match;
   const prefix = mode === 'sdbx' ? 'sandbox-api' : 'api';
   const origin = stage
     ? `https://${prefix}.${stage}.polygon-dev.technology`
     : `https://${prefix}.polygon.technology`;
   return {
-    projectId: `prj_${project}`,
     origin,
     indexerUrl: `${origin}/v1/IndexerGateway/GetTokenBalancesDetails`,
     stage: stage ?? 'production',

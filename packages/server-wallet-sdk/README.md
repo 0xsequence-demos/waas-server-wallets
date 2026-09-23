@@ -5,12 +5,14 @@ Standalone ESM TypeScript SDK targeting WaaS v1.1.0, with OIDC authentication, e
 ## Installation
 
 ```sh
-npm install @polygonlabs/oms-server-wallet-sdk@0.2.0
+npm install @polygonlabs/oms-server-wallet-sdk@0.3.0
 ```
 
-For a step-by-step guide to integrating this package into your own Node.js / TypeScript backend, see the [OIDC, wallet creation, signing, and transaction walkthrough](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/NODE-INTEGRATION.md).
+Version 0.3.0 is prepared but not published by this change. Until publication, use a locally packed archive. For a step-by-step guide to integrating this package into your own Node.js / TypeScript backend, see the [OIDC, wallet creation, signing, and transaction walkthrough](https://github.com/0xsequence-demos/waas-server-wallets/blob/master/docs/NODE-INTEGRATION.md).
 
 ## Integration
+
+The Server Wallet SDK requires secret credentials; publishable keys are rejected. Reuse one `OmsAuth` instance for WaaS and Indexer calls to share the cached OMS JWT. Secrets are sent only to `/v0.13/auth/token`. The configured project ID must match the exchange response and keeps storage namespaces stable across key rotation. Enable internal project-JWT exchange on the OMS gateway before upgrading. `WaasPublic` requests carry no OMS credentials; wallet signatures and response attestation remain mandatory on protected operations.
 
 ```ts
 import {
@@ -20,16 +22,17 @@ import {
   SerialExecutor,
   IndexerClient,
   parseAmount,
-  environmentFromKey,
+  OmsAuth,
   type StateStore,
 } from '@polygonlabs/oms-server-wallet-sdk';
 
 // Implement durable reads/writes in a namespace dedicated to this identity.
 declare const persistence: StateStore;
-declare const publishableKey: string;
+declare const appId: string; // sk_* identifier
+declare const apiSecret: string;
+declare const projectId: string;
 declare const approvedPcr0s: string[];
 declare const encryptionKeyBase64: string; // 32 random bytes, base64 encoded
-declare const applicationOrigin: string; // Origin allowed for the OMS publishable key
 declare const issuer: string;
 declare const audience: string;
 declare const subject: string;
@@ -37,34 +40,26 @@ declare function issueIdToken(): Promise<{ token: string; expiresAt: number }>;
 
 // Reuse exactly one executor per identity in a single process/DO instance.
 const executor = new SerialExecutor();
-const environment = environmentFromKey(publishableKey);
+const auth = new OmsAuth({ appId, apiSecret, projectId });
 const namespace = JSON.stringify([
-  environment.origin,
-  environment.projectId,
+  auth.environment.origin,
+  auth.projectId,
   issuer,
   audience,
   subject,
 ]);
-// Server requests use the project's allowed Origin, just like the walkthrough.
-const omsFetch: typeof fetch = (input, init) => {
-  const headers = new Headers(
-    init?.headers ?? (input instanceof Request ? input.headers : undefined),
-  );
-  headers.set('Origin', new URL(applicationOrigin).origin);
-  return fetch(input, { ...init, headers });
-};
 const wallet = new ServerWallet({
   subject,
   issuer,
   audience,
   tokenProvider: issueIdToken,
-  transport: new WaasTransport(publishableKey, approvedPcr0s, omsFetch),
+  transport: new WaasTransport(auth, approvedPcr0s),
   store: new EncryptedStore(persistence, encryptionKeyBase64, namespace),
   executor,
 });
 
 const snapshot = await wallet.createOrRestore();
-const balances = await new IndexerClient(publishableKey, omsFetch).getBalances(
+const balances = await new IndexerClient(auth).getBalances(
   snapshot.wallet!.address,
 );
 const signed = await wallet.signMessage(crypto.randomUUID(), 137, 'Hello OMS');
@@ -127,7 +122,7 @@ import {
 } from '@polygonlabs/oms-server-wallet-sdk/trails';
 
 const trails = new TrailsClient({
-  apiKey: trailsApiKey, // Separate from the OMS publishable key; backend only.
+  apiKey: trailsApiKey, // Separate from the OMS secret credentials; backend only.
   origin: applicationOrigin, // Exact origin, without a trailing slash.
 });
 const { TrailsContracts } = await trails.readiness();

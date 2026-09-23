@@ -7,7 +7,7 @@ import type { WalletCoordinator } from '../../apps/server/worker.js';
 import { OidcIssuer } from '../../apps/server/issuer.js';
 import { configFrom } from '../../apps/server/config.js';
 import { WaasTransport } from '../../packages/server-wallet-sdk/src/transport.js';
-import { omsFetch } from '../../apps/server/oms-fetch.js';
+import { testAuth } from '../fixtures/oms.js';
 import {
   generateCredential,
   signatureHeader,
@@ -27,20 +27,16 @@ it('issues backend OIDC tokens and signs P-256 RPC requests in Workers', async (
 
 it('constructs supported outbound requests and rejects gateway redirects in Workers', async () => {
   let request: Request | undefined;
-  const transport = new WaasTransport(
-    'pk_dev_live_test_key',
-    ['0'.repeat(96)],
-    omsFetch('https://issuer.example', async (url, init) => {
-      request = new Request(url, init);
-      return Response.redirect('https://unexpected.example', 302);
-    }),
-  );
+  const transport = new WaasTransport(testAuth(), ['0'.repeat(96)], async (url, init) => {
+    request = new Request(url, init);
+    return Response.redirect('https://unexpected.example', 302);
+  });
   const credential = await generateCredential();
   await expect(transport.request('CommitVerifier', {}, credential)).rejects.toMatchObject({
     code: 'UPSTREAM_REDIRECT',
   });
   expect(request?.redirect).toBe('manual');
-  expect(request?.headers.get('Origin')).toBe('https://issuer.example');
+  expect(request?.headers.get('Authorization')).toBe('Bearer test-only-project-jwt');
 });
 
 it('verifies a real Nitro attestation using Workers crypto and the bundled certificate library', async () => {

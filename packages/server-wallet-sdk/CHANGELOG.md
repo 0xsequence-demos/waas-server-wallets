@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+- Require OMS secret credentials through `OmsAuth` for WaaS and Indexer clients. Publishable keys are no longer accepted by the Server Wallet SDK.
+- Exchange secrets only at `/v0.13/auth/token`, cache the OMS JWT, and share concurrent token refreshes. Verify the returned project and mode against configuration.
+- Keep public WaaS calls credential-free and preserve wallet signatures and mandatory response attestation. Protected calls are not automatically replayed after authentication failures.
+- Replace `OMS_PUBLISHABLE_KEY` with `OMS_APP_ID`, `OMS_API_SECRET`, and `OMS_PROJECT_ID` in the demo. Deploy the OMSX internal JWT exchange and enable gateway `project_jwt_auth` before upgrading the SDK.
+
 ## 0.2.0
 
 - Add optional `/trails`: direct v1.5 API transport, exact-input quote validation, chain/token discovery, `EvmChainReader` and `WalletSwaps`.

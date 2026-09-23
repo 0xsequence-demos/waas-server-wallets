@@ -6,12 +6,14 @@ For the prepared SDK 0.2.0 and Trails swap upgrade, use [the swap rollout handof
 
 ## Current deployment
 
+These historical checks used publishable credentials. Before deploying the secret-only SDK, deploy the OMSX API and gateway changes, then enable `project_jwt_auth` in gateway configuration. Configure `OMS_APP_ID`, `OMS_API_SECRET`, and `OMS_PROJECT_ID`, then repeat live acceptance. No live deployment or secret changes are included here.
+
 - Account: **Sequence Demos**, `b6c780e2a453a8593576535e3e81a7cd`.
 - Dashboard/issuer: **https://oms-server-wallet-dashboard.0xsequence.workers.dev**.
 - D1: `oms-server-wallet-dashboard`, ID `a2f575c6-6c3e-4317-9a2c-9271c50746c9`; initial migration applied.
 - The four generated application secrets are deployed. Sign in with `ADMIN_PASSWORD` from the local `.env`.
-- The OMS dev publishable key and trusted PCR0 policy are synced from the operator's `.env`. The key is stored as a Worker secret; PCR0 values are pinned in `wrangler.jsonc`.
-- `APP_ORIGIN` is `https://oms-server-wallet-dashboard.0xsequence.workers.dev`. Both WaaS and indexer gateway requests send this exact `Origin` header, without a trailing slash. Local development retains its localhost origin.
+- Configure OMS secret credentials and the expected project ID from the operator's `.env`. Store these in Worker secrets; PCR0 values remain pinned in `wrangler.jsonc`.
+- `APP_ORIGIN` is `https://oms-server-wallet-dashboard.0xsequence.workers.dev`. It remains the dashboard's browser origin; the secret-only SDK does not send an `Origin` header to WaaS or Indexer.
 - OIDC audience: `api.dev.polygon-dev.technology`; provider registration verified by live authentication.
 - Approved dev PCR0: 96 hexadecimal zeros. Full Nitro certificate, signature, freshness, nonce, and request/response binding verification remains enabled. Production routing rejects the debug measurement.
 - Deployment version: `f75b331c-7d27-4532-9aab-d688140fb7fb`.
@@ -72,10 +74,12 @@ pnpm exec wrangler secret put ADMIN_PASSWORD
 pnpm exec wrangler secret put SESSION_SECRET
 pnpm exec wrangler secret put ENCRYPTION_KEY
 pnpm exec wrangler secret put OIDC_PRIVATE_JWK
-pnpm exec wrangler secret put OMS_PUBLISHABLE_KEY
+pnpm exec wrangler secret put OMS_APP_ID
+pnpm exec wrangler secret put OMS_API_SECRET
+pnpm exec wrangler secret put OMS_PROJECT_ID
 ```
 
-The last value is the OMS **dev** publishable key. It selects the gateway hostname and project scope for both WaaS and the indexer. No RPC provider API key is needed. Secret updates deploy a new Worker version; see [Cloudflare secrets documentation](https://developers.cloudflare.com/workers/configuration/secrets/).
+Use the OMS **dev** secret App ID (`sk_dev_…`), its matching API secret, and the project ID. The SDK verifies the project and mode returned by `/v0.13/auth/token`. The gateway must support internal project-JWT exchange with `project_jwt_auth = true` for WaaS and Indexer before deploying this SDK. Publishable keys remain supported by the gateway for other clients, but the Server Wallet SDK rejects them. No RPC provider API key is needed. Secret updates deploy a new Worker version; see [Cloudflare secrets documentation](https://developers.cloudflare.com/workers/configuration/secrets/).
 
 Retain the encryption key with the database state: changing it does not re-encrypt existing records. Changing `ADMIN_PASSWORD` or `SESSION_SECRET` invalidates existing dashboard sessions automatically.
 

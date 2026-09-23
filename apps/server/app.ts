@@ -9,11 +9,10 @@ import {
   WalletError,
   type WalletSnapshot,
 } from '@polygonlabs/oms-server-wallet-sdk';
-import { readiness, type Config } from './config.js';
+import { readiness, omsAuth, type Config } from './config.js';
 import { Repository, type WalletRow } from './database.js';
 import { AdminAuth } from './auth.js';
 import { OidcIssuer } from './issuer.js';
-import { omsFetch } from './oms-fetch.js';
 import type { Command, CommandResult } from './service.js';
 import { swapConfiguration } from './swaps-config.js';
 
@@ -202,7 +201,7 @@ export function createApp(runtime: Runtime) {
     if (!snapshot.wallet)
       throw new WalletError('WALLET_PENDING', 'Restore this wallet to finish creation.', 409);
     return c.json(
-      await new IndexerClient(config.OMS_PUBLISHABLE_KEY, omsFetch(config.APP_ORIGIN)).getBalances(
+      await new IndexerClient(omsAuth(config)).getBalances(
         snapshot.wallet.address,
         z.coerce
           .number()

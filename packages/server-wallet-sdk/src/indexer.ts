@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { getAddress } from 'viem';
-import { CHAINS, environmentFromKey, requireChain } from './environment.js';
+import { CHAINS, requireChain } from './environment.js';
+import { OmsAuth } from './auth.js';
 import { WalletError } from './errors.js';
 import { boundedText } from './transport.js';
 
@@ -54,10 +55,16 @@ export interface Balances {
 export class IndexerClient {
   private readonly environment;
   constructor(
-    private readonly key: string,
+    private readonly auth: OmsAuth,
     private readonly fetcher: typeof fetch = fetch,
   ) {
-    this.environment = environmentFromKey(key);
+    if (!(auth instanceof OmsAuth))
+      throw new WalletError(
+        'CONFIGURATION',
+        'IndexerClient requires OMS secret credentials through OmsAuth.',
+        503,
+      );
+    this.environment = auth.environment;
   }
   async getBalances(address: string, page = 0): Promise<Balances> {
     address = getAddress(address);
@@ -68,7 +75,7 @@ export class IndexerClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Api-Key': this.key,
+        Authorization: `Bearer ${await this.auth.accessToken()}`,
         Webrpc: 'webrpc@v0.31.2;gen-typescript@v0.23.1;sequence-indexer@v0.4.0',
       },
       body: JSON.stringify({

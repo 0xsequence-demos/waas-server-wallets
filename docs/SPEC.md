@@ -23,7 +23,7 @@ The application operator controls the OIDC issuer and backend credentials and ca
 
 | Decision                 | Requirement                                                       | Implementation                                                                                                                           |
 | ------------------------ | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Target integration       | WaaS v1.1.0; environment selected through an OMS publishable key. | Derive WaaS/indexer routing and project scope from the key. Deploy the issuer and then register it in OMS dev first.                     |
+| Target integration       | WaaS v1.1.0; OMS secret credentials only. | Derive WaaS/indexer routing from the secret App ID and verify the configured project during exchange. Deploy the issuer and register it in OMS dev first. |
 | Chains and assets        | EVM only: Polygon, Arbitrum, Base, BNB, Ethereum Mainnet.         | Native-token and ERC-20 balances/transfers. Chain IDs 137, 42161, 8453, 56, and 1.                                                       |
 | Operations and fees      | Transfers and plain-message signing; gas sponsorship required.    | Require `sponsored: true` from preparation. Do not execute an unsponsored quote. No arbitrary calls, EIP-712, NFTs, Solana, or batching. |
 | Dashboard access         | Shared administrator login with one password.                     | Password authentication, server-managed sessions, CSRF protection, and login rate limiting. User management is deferred.                 |

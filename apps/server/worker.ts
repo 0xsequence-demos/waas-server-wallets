@@ -13,7 +13,9 @@ type Secrets = Pick<
   | 'SESSION_SECRET'
   | 'ENCRYPTION_KEY'
   | 'OIDC_PRIVATE_JWK'
-  | 'OMS_PUBLISHABLE_KEY'
+  | 'OMS_APP_ID'
+  | 'OMS_API_SECRET'
+  | 'OMS_PROJECT_ID'
   | 'TRAILS_API_KEY'
   | 'EVM_RPC_URLS'
 >;

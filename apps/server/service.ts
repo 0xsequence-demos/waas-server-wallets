@@ -9,9 +9,8 @@ import {
   type Transfer,
   type WalletSnapshot,
 } from '@polygonlabs/oms-server-wallet-sdk';
-import { readiness, scopeFor, type Config } from './config.js';
+import { readiness, scopeFor, omsAuth, type Config } from './config.js';
 import { OidcIssuer } from './issuer.js';
-import { omsFetch } from './oms-fetch.js';
 import {
   EvmChainReader,
   WalletSwaps,
@@ -81,9 +80,8 @@ export async function processCommand(
       store: new EncryptedStore(store, config.ENCRYPTION_KEY, `${scopeFor(config)}:${subject}`),
       executor,
       transport: new WaasTransport(
-        config.OMS_PUBLISHABLE_KEY,
+        omsAuth(config),
         config.TRUSTED_PCR0S.split(',').filter(Boolean),
-        omsFetch(config.APP_ORIGIN),
       ),
     });
     let operation: Operation | null | undefined;

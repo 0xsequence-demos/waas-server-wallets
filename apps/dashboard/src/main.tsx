@@ -351,7 +351,7 @@ function Dashboard({ logout }: { logout: () => void }) {
                 </p>
                 <p>
                   Deploy the issuer, register its discovery URL in OMS dev, then configure the
-                  publishable key and approved enclave measurements.
+                  secret credentials, project ID, and approved enclave measurements.
                 </p>
               </div>
             )}

@@ -4,7 +4,7 @@ import {
   SerialExecutor,
   ServerWallet,
   parseAmount,
-  environmentFromKey,
+  environmentFromAppId,
 } from '@polygonlabs/oms-server-wallet-sdk';
 import { MemoryStore, sdkHarness } from './helpers.js';
 
@@ -246,14 +246,15 @@ describe('encryption, amounts, environment routing', () => {
     for (const value of ['0', '-1', '1e5', '0.0000001', '1.0000001', 'NaN'])
       expect(() => parseAmount(value, 6)).toThrow();
   });
-  it('routes publishable keys and isolates project scopes', () => {
-    expect(environmentFromKey('pk_dev_live_abc_key').origin).toBe(
+  it('routes secret App IDs and rejects publishable keys', () => {
+    expect(environmentFromAppId('sk_dev_live_00000000000000000000000001').origin).toBe(
       'https://api.dev.polygon-dev.technology',
     );
-    expect(environmentFromKey('pk_sdbx_abc_key').indexerUrl).toBe(
+    expect(environmentFromAppId('sk_sdbx_00000000000000000000000001').indexerUrl).toBe(
       'https://sandbox-api.polygon.technology/v1/IndexerGateway/GetTokenBalancesDetails',
     );
-    expect(environmentFromKey('pk_stg_live_abc_key').projectId).toBe('prj_abc');
-    expect(() => environmentFromKey('pk_dev_live_x"\n_key')).toThrow();
+    expect(environmentFromAppId('sk_stg_live_00000000000000000000000001').stage).toBe('stg');
+    expect(() => environmentFromAppId('pk_dev_live_test_key')).toThrow();
+    expect(() => environmentFromAppId('sk_dev_live_x"\n_key')).toThrow();
   });
 });

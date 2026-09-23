@@ -2,6 +2,8 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { EvmChainReader, TrailsClient } from '@polygonlabs/oms-server-wallet-sdk/trails';
 import { IndexerClient } from '../../packages/server-wallet-sdk/src/indexer.js';
 import { WaasTransport } from '../../packages/server-wallet-sdk/src/transport.js';
+import { OmsAuth } from '../../packages/server-wallet-sdk/src/auth.js';
+import { secretCredentials, tokenResponse } from '../fixtures/oms.js';
 import { contracts, owner } from '../fixtures/trails.js';
 
 beforeEach(() => {
@@ -31,6 +33,7 @@ beforeEach(() => {
             balances: [],
           };
         else if (path === '/v1/WaasPublic/Status') response = { status: true };
+        else if (path === '/v0.13/auth/token') response = tokenResponse();
         else throw new Error(`Unexpected fixture endpoint: ${path}`);
         const probe: Response = await Reflect.apply(target, receiver, ['data:text/plain,ok']);
         await probe.body?.cancel();
@@ -54,7 +57,7 @@ it('reads chain state with the default native Workers fetch', async () => {
 });
 
 it('reads indexer balances with the default native Workers fetch', async () => {
-  const result = await new IndexerClient('pk_dev_live_test_key').getBalances(owner);
+  const result = await new IndexerClient(new OmsAuth(secretCredentials)).getBalances(owner);
   expect(result.errors).toEqual([]);
   expect(result.items).toHaveLength(5);
   expect(result.items.every((item) => item.balance === '0')).toBe(true);
@@ -62,6 +65,6 @@ it('reads indexer balances with the default native Workers fetch', async () => {
 
 it('reaches mandatory attestation verification with the default native Workers fetch', async () => {
   await expect(
-    new WaasTransport('pk_dev_live_test_key', ['0'.repeat(96)]).request('Status', {}),
+    new WaasTransport(new OmsAuth(secretCredentials), ['0'.repeat(96)]).request('Status', {}),
   ).rejects.toMatchObject({ code: 'ATTESTATION_FAILED' });
 });

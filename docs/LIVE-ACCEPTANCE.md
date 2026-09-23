@@ -1,5 +1,7 @@
 # OMS dev acceptance — 2026-09-17
 
+Historical results below predate the secret-only SDK migration. The new secret-JWT flow requires the OMSX and gateway changes to be deployed before repeating live acceptance; these results do not validate that flow.
+
 Deployment: [OMS server wallet dashboard](https://oms-server-wallet-dashboard.0xsequence.workers.dev), Cloudflare version `62b4bc1a-c5ed-4de7-8ebd-385d2f5de305` in account `b6c780e2a453a8593576535e3e81a7cd`.
 
 The configured publishable key selects `https://sandbox-api.dev.polygon-dev.technology`. The backend sends `Origin: https://oms-server-wallet-dashboard.0xsequence.workers.dev` on both WaaS and indexer requests. OIDC JWT audience is `api.dev.polygon-dev.technology`. Dev's operator-approved PCR0 is 96 hexadecimal zeros. Attestation verification remains mandatory; the all-zero measurement is rejected for production environments.

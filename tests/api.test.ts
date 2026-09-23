@@ -27,7 +27,9 @@ describe('admin API and OIDC issuer', () => {
       OIDC_PRIVATE_JWK: JSON.stringify(await exportJWK(pair.privateKey)),
       OIDC_ISSUER: 'https://issuer.example',
       OIDC_AUDIENCE: 'test-audience',
-      OMS_PUBLISHABLE_KEY: 'pk_dev_live_test_key',
+      OMS_APP_ID: 'sk_dev_live_00000000000000000000000001',
+      OMS_API_SECRET: 'test-only-api-secret',
+      OMS_PROJECT_ID: 'prj_0000000000002',
       TRUSTED_PCR0S: '0'.repeat(96),
       APP_ORIGIN: origin,
     });

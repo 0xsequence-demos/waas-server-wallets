@@ -189,7 +189,10 @@ test('shows setup requirements instead of allowing unconfigured wallet creation'
       json: path.endsWith('/session')
         ? { authenticated: true }
         : path.endsWith('/config')
-          ? { missing: ['OMS_PUBLISHABLE_KEY', 'OIDC_ISSUER'], chains: [] }
+          ? {
+              missing: ['OMS_APP_ID', 'OMS_API_SECRET', 'OMS_PROJECT_ID', 'OIDC_ISSUER'],
+              chains: [],
+            }
           : { wallets: [], nextOffset: null },
     });
   });

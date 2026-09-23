@@ -59,11 +59,14 @@ writeFileSync(
 );
 writeFileSync(
   join(directory, 'consumer.ts'),
-  `import { ServerWallet, SerialExecutor, type StateStore } from '@polygonlabs/oms-server-wallet-sdk';
+  `import { ServerWallet, SerialExecutor, OmsAuth, WaasTransport, IndexerClient, type StateStore } from '@polygonlabs/oms-server-wallet-sdk';
 import { WalletSwaps, EvmChainReader, TrailsClient, type SwapStore, type SwapRecord } from '@polygonlabs/oms-server-wallet-sdk/trails';
 const records = new Map<string,SwapRecord>();
 const store:SwapStore={get:async(id)=>records.get(id)??null,findIntent:async(intent)=>[...records.values()].find(r=>r.quote.intent.intentId===intent)?.id??null,save:async(r)=>{records.set(r.id,r);},list:async()=>[...records.values()]};
 const state:StateStore={read:async()=>null,write:async()=>{}};
+const auth=new OmsAuth({appId:'sk_dev_live_00000000000000000000000001',apiSecret:'test-only-secret',projectId:'prj_0000000000002'});
+void new WaasTransport(auth,['0'.repeat(96)]);
+void new IndexerClient(auth);
 const wallet=new ServerWallet({subject:'consumer',issuer:'https://issuer.example',audience:'test',store:state,executor:new SerialExecutor(),transport:{request:async()=>{throw new Error('Offline consumer');}},tokenProvider:async()=>({token:'test',expiresAt:1})});
 const swaps=new WalletSwaps({wallet,store,executor:new SerialExecutor(),trails:new TrailsClient({apiKey:'fixture'}),chains:new EvmChainReader({137:'https://rpc.example'}),assets:[],enabled:false,environment:'consumer'});
 void swaps.listSwaps();

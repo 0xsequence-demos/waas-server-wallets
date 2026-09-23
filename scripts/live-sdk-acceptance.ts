@@ -8,9 +8,8 @@ import {
   type StateStore,
 } from '@polygonlabs/oms-server-wallet-sdk';
 import type { Credential } from '../packages/server-wallet-sdk/src/protocol.js';
-import { configFrom, scopeFor } from '../apps/server/config.js';
+import { configFrom, scopeFor, omsAuth } from '../apps/server/config.js';
 import { OidcIssuer } from '../apps/server/issuer.js';
-import { omsFetch } from '../apps/server/oms-fetch.js';
 
 // Explicit live test of the independently built Node SDK. Never sends a transaction.
 const subject = 'acceptance-sdk-2026-09-17';
@@ -32,11 +31,7 @@ const disk: StateStore = {
 };
 const store = new EncryptedStore(disk, config.ENCRYPTION_KEY, `${scopeFor(config)}:${subject}`);
 const issuer = new OidcIssuer(config);
-const transport = new WaasTransport(
-  config.OMS_PUBLISHABLE_KEY,
-  config.TRUSTED_PCR0S.split(','),
-  omsFetch(origin),
-);
+const transport = new WaasTransport(omsAuth(config), config.TRUSTED_PCR0S.split(','));
 const executor = new SerialExecutor();
 const calls: string[] = [];
 const create = () =>

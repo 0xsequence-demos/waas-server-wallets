@@ -20,7 +20,7 @@ pnpm dev
 
 Open **http://127.0.0.1:5187**. Sign in with `ADMIN_PASSWORD` from the generated, git-ignored `.env`. Setup preserves an existing `.env`; it does not print secrets. The dashboard starts before OMS is configured and identifies the missing settings. Local persistence is `.data/dashboard.sqlite`; the API binds to `127.0.0.1:8787`. These are a single Node process and persistent SQLite, not an in-memory demo.
 
-Live wallet actions require an OMS publishable key, trusted enclave measurements, and a public HTTPS issuer registered in OMS. Follow [deployment and registration](docs/DEPLOYMENT.md). Local execution can use the deployed issuer URL if its signing key and audience match the local configuration. Keep `APP_ORIGIN=http://127.0.0.1:5187` locally. Local and deployed catalogs are separate; avoid operating the same identity from both simultaneously.
+Live wallet actions require OMS secret credentials (App ID and API secret), the expected project ID, trusted enclave measurements, and a public HTTPS issuer registered in OMS. Follow [deployment and registration](docs/DEPLOYMENT.md). Local execution can use the deployed issuer URL if its signing key and audience match the local configuration. Keep `APP_ORIGIN=http://127.0.0.1:5187` locally. Local and deployed catalogs are separate; avoid operating the same identity from both simultaneously.
 
 ## Layout
 
@@ -34,10 +34,10 @@ Live wallet actions require an OMS publishable key, trusted enclave measurements
 
 On Cloudflare, one Worker serves assets, API, discovery, and JWKS. D1 stores the catalog, sessions, audit events, and operation summaries. A SQLite Durable Object per wallet owns encrypted credentials, nonces, and authoritative operation state and serializes calls. Node uses the same SDK and API with SQLite and per-wallet in-process executors. Do not run multiple Node processes against the same local database.
 
-SDK **0.2.0** includes the standalone swap module. Install it in your backend:
+SDK **0.3.0** requires secret credentials and includes the standalone swap module. This version is prepared, not published by this change. After publication, install it in your backend:
 
 ```sh
-npm install @polygonlabs/oms-server-wallet-sdk@0.2.0
+npm install @polygonlabs/oms-server-wallet-sdk@0.3.0
 ```
 
 Follow the [Node.js / TypeScript integration walkthrough](docs/NODE-INTEGRATION.md), covering OIDC registration, credentials, wallet creation, signing, and transaction sending. The dashboard uses the same package through a workspace dependency for local development. See also the [detailed specification](docs/SPEC.md), [SDK API and integration contract](packages/server-wallet-sdk/README.md), and [SDK release procedure](docs/SDK-RELEASE.md).

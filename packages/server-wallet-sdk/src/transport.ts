@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { verifyAttestationDocument } from './attestation.js';
 import { base64EncodeBytes } from './encoding.js';
-import { environmentFromKey } from './environment.js';
+import { OmsAuth } from './auth.js';
 import { UpstreamError, WalletError } from './errors.js';
 import { signatureHeader, type Credential } from './protocol.js';
 
@@ -16,11 +16,17 @@ export class WaasTransport implements RpcTransport {
   private readonly environment;
   private readonly pcrs: Set<string>;
   constructor(
-    private readonly key: string,
+    private readonly auth: OmsAuth,
     trustedPcr0s: readonly string[],
     private readonly fetcher: typeof fetch = fetch,
   ) {
-    this.environment = environmentFromKey(key);
+    if (!(auth instanceof OmsAuth))
+      throw new WalletError(
+        'CONFIGURATION',
+        'WaasTransport requires OMS secret credentials through OmsAuth.',
+        503,
+      );
+    this.environment = auth.environment;
     this.pcrs = new Set(trustedPcr0s.map((v) => v.trim().toLowerCase().replace(/^0x/, '')));
     if (!this.pcrs.size || [...this.pcrs].some((v) => !/^[0-9a-f]{96}$/.test(v)))
       throw new WalletError('CONFIGURATION', 'Configure approved enclave PCR0 measurements.', 503);
@@ -42,16 +48,17 @@ export class WaasTransport implements RpcTransport {
     const nonce = base64EncodeBytes(crypto.getRandomValues(new Uint8Array(18)));
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Api-Key': this.key,
       'X-Attestation-Nonce': nonce,
     };
-    if (credential)
+    if (credential) {
+      headers.Authorization = `Bearer ${await this.auth.accessToken()}`;
       headers['OMS-Wallet-Signature'] = await signatureHeader(
         credential,
         path,
-        this.environment.projectId,
+        this.auth.projectId,
         body,
       );
+    }
     const fetcher = this.fetcher;
     const response = await fetcher(this.environment.origin + path, {
       method: 'POST',

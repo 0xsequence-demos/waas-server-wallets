@@ -1,6 +1,6 @@
 # Node.js / TypeScript wallet integration walkthrough
 
-This guide shows how to use `@polygonlabs/oms-server-wallet-sdk` from npm in your own backend: configure OpenID Connect (OIDC), create or restore a wallet, sign a message, and send a sponsored native-token or ERC-20 transfer. These core operations remain compatible with SDK `0.1.0` and `0.2.0` on WaaS v1.1.0. For the new swap module, use [the 0.2.0 backend swaps guide](SWAPS-INTEGRATION.md). You can use it without cloning this repository, running the dashboard, or using Cloudflare.
+This guide targets the secret-only SDK `0.3.0` on WaaS v1.1.0: configure OpenID Connect (OIDC), create or restore a wallet, sign a message, and send a sponsored transfer. Its authentication setup is not compatible with SDK `0.1.0` or `0.2.0`. Version `0.3.0` is prepared but not published by this change; until publication, install a locally packed archive. The [swap module guide](SWAPS-INTEGRATION.md) covers the unchanged Trails workflow.
 
 **Your backend supplies a trusted identity; the SDK authenticates a credential for that identity; WaaS performs wallet signing.** You provide OpenID information in two places: register your issuer and audience with OMS once, then provide a fresh signed ID token through the SDK's `tokenProvider` whenever authentication is needed.
 
@@ -41,13 +41,12 @@ Before calling the wallet API, arrange these settings with the OMS project owner
 
 | Setting                | What to provide or obtain                                                                                                                     |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| OMS publishable key    | A key for your own project/environment. The SDK derives the gateway URL and project scope from it.                                            |
+| OMS secret credentials | An `sk_*` App ID, API secret, and expected project ID. The SDK derives the gateway URL and verifies project scope during secret exchange. |
 | Issuer                 | For example, `https://wallet-api.example.com`, with no trailing slash.                                                                        |
 | Discovery URL          | `https://wallet-api.example.com/.well-known/openid-configuration`.                                                                            |
 | JWKS URL               | `https://wallet-api.example.com/oidc/jwks`, serving **public keys only**.                                                                     |
 | Audience               | The exact registered string. It must match the JWT and `ServerWallet` configuration.                                                          |
 | Identity configuration | Custom OIDC provider, `identityType: oidc`, `authMode: id-token`, ES256 signing, and permission to use your chosen subjects.                  |
-| Application origin     | The origin allowed for your OMS key, for example `https://wallet-api.example.com`. The examples send it as the `Origin` header.               |
 | Enclave trust policy   | Approved PCR0 measurements for the selected deployment, supplied independently by its operator. Each is 48 bytes / 96 hexadecimal characters. |
 | Gas sponsorship        | Enable sponsorship for the networks on which you intend to send transfers. This SDK rejects unsponsored quotes.                               |
 
@@ -70,17 +69,17 @@ If you already have an identity provider, confirm its issuer, audience, token-si
 Use Node **24+** and install the SDK directly from npm in your backend:
 
 ```sh
-npm install @polygonlabs/oms-server-wallet-sdk@0.2.0
+npm install @polygonlabs/oms-server-wallet-sdk@0.3.0
 ```
 
-The examples pin version `0.2.0`, which adds swaps and recovery while preserving the core wallet API. The API is not yet declared stable. For a new example application, run the following commands in a directory of your choice:
+The examples pin version `0.3.0`, which requires secret credentials. The API is not yet declared stable. After publication, run the following commands in a directory of your choice:
 
 ```sh
 mkdir oms-node-example
 cd oms-node-example
 npm init -y
 npm pkg set type=module
-npm install @polygonlabs/oms-server-wallet-sdk@0.2.0 jose@6.2.10
+npm install @polygonlabs/oms-server-wallet-sdk@0.3.0 jose@6.2.10
 npm install --save-dev typescript@5.9.3 tsx@4.23.13 @types/node@24
 mkdir src
 ```
@@ -123,7 +122,9 @@ await writeFile(
     `ENCRYPTION_KEY=${randomBytes(32).toString('base64')}`,
     'OIDC_ISSUER=https://wallet-api.example.com',
     'OIDC_AUDIENCE=replace-with-your-registered-audience',
-    'OMS_PUBLISHABLE_KEY=replace-with-your-project-key',
+    'OMS_APP_ID=replace-with-your-sk-app-id',
+    'OMS_API_SECRET=replace-with-your-api-secret',
+    'OMS_PROJECT_ID=replace-with-your-prj-id',
     'TRUSTED_PCR0S=replace-with-operator-approved-pcr0s',
     'APP_ORIGIN=https://wallet-api.example.com',
     'DATABASE_PATH=.data/wallets.sqlite',
@@ -262,7 +263,7 @@ import {
   SerialExecutor,
   ServerWallet,
   WaasTransport,
-  environmentFromKey,
+  OmsAuth,
   type StateStore,
 } from '@polygonlabs/oms-server-wallet-sdk';
 import { audience, issuer, issueIdToken, required } from './oidc.js';
@@ -300,32 +301,26 @@ class SqliteStore implements StateStore {
   }
 }
 
-const publishableKey = required('OMS_PUBLISHABLE_KEY');
+const auth = new OmsAuth({
+  appId: required('OMS_APP_ID'),
+  apiSecret: required('OMS_API_SECRET'),
+  projectId: required('OMS_PROJECT_ID'),
+});
 const encryptionKey = required('ENCRYPTION_KEY');
-const environment = environmentFromKey(publishableKey);
-const origin = new URL(required('APP_ORIGIN')).origin;
-export const omsFetch: typeof fetch = (input, init) => {
-  const headers = new Headers(
-    init?.headers ?? (input instanceof Request ? input.headers : undefined),
-  );
-  headers.set('Origin', origin);
-  return fetch(input, { ...init, headers });
-};
 const transport = new WaasTransport(
-  publishableKey,
+  auth,
   required('TRUSTED_PCR0S')
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean),
-  omsFetch,
 );
 
 const clients = new Map<string, ServerWallet>();
 export function getWallet(subject: string): ServerWallet {
   // JSON encoding avoids collisions between components of the namespace.
   const namespace = JSON.stringify([
-    environment.origin,
-    environment.projectId,
+    auth.environment.origin,
+    auth.projectId,
     issuer,
     audience,
     subject,
@@ -393,7 +388,7 @@ The exact authentication payloads are assembled in [the SDK client](../packages/
 4. Call `CompleteAuth` using the same credential, with `identityType: 'oidc'`, `authMode: 'id-token'`, that `verifier`, `answer: token`, and requested `lifetime: 21600` seconds by default.
 5. WaaS validates the commitment and ID token against the registered provider and binds the identity to the credential. The SDK checks the returned issuer, subject, and credential ID, follows wallet-list pagination if needed, then restores the single EVM wallet or creates it.
 
-Both auth calls are signed with the new credential even before it has been authenticated. Authenticated RPCs use `/v1/Waas/<Method>`, `Api-Key`, and `OMS-Wallet-Signature`; the SDK persists a strictly increasing credential nonce before dispatch. Every WaaS response is attestation-verified before its contents are trusted. You do not need to implement these wire details yourself.
+Both auth calls are signed with the new credential even before it has been authenticated. Authenticated RPCs use `/v1/Waas/<Method>`, `Authorization: Bearer <OMS project JWT>`, and `OMS-Wallet-Signature`; the SDK persists a strictly increasing credential nonce before dispatch. Every WaaS response is attestation-verified before its contents are trusted. You do not need to implement these wire details yourself.
 
 An existing valid credential is reused without minting a token on every call. The SDK requests a six-hour credential lifetime by default and uses the actual expiry returned by WaaS (`snapshot.expiresAt`, an ISO timestamp). On the next operation within 60 seconds of expiry, it authenticates a fresh credential. Verified unknown, expired, or revoked/unauthorized credential errors trigger one reauthentication attempt. Renewal requires a working `tokenProvider`, not user interaction in this backend-issued flow.
 
@@ -528,7 +523,7 @@ async function prepareTokenTransfer(
 }
 ```
 
-A token with six decimals represents `1.25` as `'1250000'`. Do not assume every token has 18 decimals or convert money amounts through JavaScript floating-point arithmetic. The SDK does not fetch or validate token decimals for you. You can import `IndexerClient` from the same package and obtain balances/metadata with `new IndexerClient(publishableKey, omsFetch).getBalances(address)`; follow `nextPage`, handle per-chain errors, and treat missing decimals as unknown.
+A token with six decimals represents `1.25` as `'1250000'`. Do not assume every token has 18 decimals or convert money amounts through JavaScript floating-point arithmetic. The SDK does not fetch or validate token decimals for you. You can import `IndexerClient` from the same package and obtain balances/metadata with `new IndexerClient(auth).getBalances(address)`; follow `nextPage`, handle per-chain errors, and treat missing decimals as unknown.
 
 ### Approve and send the stored transfer
 

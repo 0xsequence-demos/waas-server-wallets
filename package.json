@@ -29,7 +29,7 @@
   "dependencies": {
     "@hono/node-server": "2.1.1",
     "@polygonlabs/oms-server-wallet-sdk": "workspace:*",
-    "hono": "4.13.5",
+    "hono": "4.13.16",
     "jose": "6.2.10",
     "react": "19.2.8",
     "react-dom": "19.2.8",

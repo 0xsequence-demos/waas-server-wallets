@@ -27,7 +27,7 @@
     "test:package": "node --import tsx scripts/check-sdk-artifact.ts"
   },
   "dependencies": {
-    "@hono/node-server": "2.1.1",
+    "@hono/node-server": "2.1.6",
     "@polygonlabs/oms-server-wallet-sdk": "workspace:*",
     "hono": "4.13.5",
     "jose": "6.2.10",
